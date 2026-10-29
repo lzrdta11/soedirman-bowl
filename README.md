@@ -1,14 +1,15 @@
 # 🏈 Soedirman Bowl — Online Cloudflare Flag Football Platform
 
-A fully online, server-sided, real-time web platform for **Soedirman Bowl (Generals vs Commandos)** bi-weekly flag football matches, powered by **Cloudflare Workers** and **Cloudflare D1 Database**.
+A fully online, server-sided, real-time web platform for **Soedirman Bowl (Generals vs Commandos)** bi-weekly flag football matches, powered by **Cloudflare Pages / Workers** and **Cloudflare D1 Database**.
 
 ---
 
 ## ⚡ Architecture & Tech Stack
 
-- **Platform / Compute:** [Cloudflare Workers](https://workers.cloudflare.com/) (Serverless edge runtime)
+- **Platform / Hosting:** [Cloudflare Pages](https://pages.cloudflare.com/) or [Cloudflare Workers](https://workers.cloudflare.com/)
 - **Database:** [Cloudflare D1](https://developers.cloudflare.com/d1/) (Serverless distributed SQL SQLite database)
-- **Frontend / Static Assets:** Responsive Single-Page Application (HTML5, Vanilla ES6+, Canvas animations, SVG field diagram) served directly by Cloudflare Workers Static Assets (`public/`)
+- **Frontend / Static Assets:** Responsive Single-Page Application (HTML5, Vanilla ES6+, Canvas animations, SVG field diagram) served directly by Cloudflare Pages (`public/`)
+- **Serverless API:** Cloudflare Pages Functions (`functions/api/[[route]].js`) and Workers (`src/index.js`)
 - **Real-time Sync:** Server-Sent Events (`/api/stream`) + polling fallback for instantaneous live draft and match scoring across all devices
 - **Authentication & Security:** SHA-256 hashed captain verification codes and admin login
 
@@ -21,8 +22,11 @@ A fully online, server-sided, real-time web platform for **Soedirman Bowl (Gener
 ├── package.json             # NPM project configuration and scripts
 ├── wrangler.jsonc           # Cloudflare Worker & D1 binding configuration
 ├── schema.sql               # Cloudflare D1 SQL table definitions and initial seed
+├── functions/
+│   └── api/
+│       └── [[route]].js     # Cloudflare Pages Functions API handler (/api/*)
 ├── src/
-│   └── index.js             # Cloudflare Worker API router & server-side logic
+│   └── index.js             # Cloudflare Workers standalone API handler
 └── public/
     ├── index.html           # Main Soedirman Bowl application (Generals vs Commandos)
     └── playbook.html        # Flag Football QB Playbook
@@ -30,60 +34,68 @@ A fully online, server-sided, real-time web platform for **Soedirman Bowl (Gener
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## 🌐 Deploying to Cloudflare Pages (Recommended)
 
-### 1. Prerequisites
-- Node.js (v18+)
-- Cloudflare Wrangler CLI (installed via devDependencies)
+### Metode A: Lewat Dashboard Cloudflare Pages (Git Integration - Otomatis Deploy saat Push)
 
-### 2. Start Local Development Server
-Run:
-```bash
-npm run dev
-```
-This runs Wrangler with a local in-memory/SQLite simulated D1 database and live-reloads on changes. Open `http://localhost:8787` in your browser.
+1. **Buka Cloudflare Dashboard**:
+   - Masuk ke [Cloudflare Dashboard](https://dash.cloudflare.com/) > **Compute (Workers & Pages)** > **Create application** > Tab **Pages**.
+   - Pilih **Connect to Git** dan pilih repository GitHub Anda: `lzrdta11/soedirman-bowl`.
+
+2. **Atur Build Settings**:
+   - **Project name:** `soedirman-bowl`
+   - **Production branch:** `main`
+   - **Framework preset:** `None`
+   - **Build command:** *(kosongkan)*
+   - **Build output directory:** `public`
+   - Klik **Save and Deploy**.
+
+3. **Buat & Hubungkan Cloudflare D1 Database**:
+   - Di sidebar Cloudflare Dashboard, buka **Storage & Databases** > **D1 SQL Database**.
+   - Klik **Create Database**, beri nama: `soedirman-bowl-db`.
+   - Buka project Pages Anda > **Settings** > **Functions** > **D1 Database Bindings**.
+   - Klik **Add binding**:
+     - **Variable name:** `DB`
+     - **D1 database:** pilih `soedirman-bowl-db`
+   - Simpan (*Save*).
+
+4. **Inisialisasi Tabel Database**:
+   Jalankan perintah ini di terminal komputer Anda (hanya sekali):
+   ```bash
+   npx wrangler d1 execute soedirman-bowl-db --remote --file=./schema.sql
+   ```
+
+5. Selesai! Website Anda langsung aktif di `https://soedirman-bowl.pages.dev` dengan database online Cloudflare D1.
 
 ---
 
-## ☁️ Deploying to Cloudflare (Fully Online)
+### Metode B: Deploy via CLI
 
-### 1. Login to Cloudflare
 ```bash
+# 1. Login Cloudflare
 npx wrangler login
-```
 
-### 2. Create the Cloudflare D1 Database
-```bash
+# 2. Buat D1 Database
 npm run d1:create
-```
-This will print your database ID, for example:
-```
-database_name = "soedirman-bowl-db"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-```
 
-### 3. Update `wrangler.jsonc`
-Replace `"00000000-0000-0000-0000-000000000000"` in `wrangler.jsonc` with your actual `database_id`:
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "soedirman-bowl-db",
-    "database_id": "YOUR_DATABASE_ID_HERE"
-  }
-]
-```
-
-### 4. Initialize Database Tables on Cloudflare
-```bash
+# 3. Inisialisasi tabel D1 di Cloudflare
 npm run d1:init:remote
+
+# 4. Deploy ke Cloudflare Pages
+npm run pages:deploy
 ```
 
-### 5. Deploy the Worker
+---
+
+## 💻 Menjalankan di Lokal (Development)
+
+Untuk testing lokal dengan simulasi database Cloudflare D1:
 ```bash
-npm run deploy
+npm run pages:dev
+# atau:
+npm run dev
 ```
-Your application will be live at `https://soedirman-bowl.<your-subdomain>.workers.dev` with online server-side database persistence!
+Akses di browser: `http://localhost:8788` atau `http://localhost:8787`.
 
 ---
 
@@ -103,14 +115,3 @@ Your application will be live at `https://soedirman-bowl.<your-subdomain>.worker
 | `DELETE` | `/api/matches/:id` | Deletes a match record |
 | `POST` | `/api/stats/:id` | Updates or bumps individual player stats |
 | `DELETE` | `/api/stats/:id` | Deletes a player stat entry |
-
----
-
-## 🏆 Key Features
-
-1. **Player Registration Pool:** Bi-weekly auto-closing schedule (Fridays 13:00 WIB), max 14 players, duplicate prevention.
-2. **Live Snake Draft:** 5v5 selection, spin wheel for first pick, order `A -> B -> B -> A -> A -> B -> B -> A`.
-3. **Captains Access:** Secure passcode authentication per team.
-4. **Interactive Best-of-3 Matches:** Touchdowns (6), Extra Points (1/2), Safeties (2), real-time game status tracking.
-5. **Leaderboard & Player Stats:** Automatic accumulation for CP, Catch, TD, Flag Pull, Battle Won, and Interceptions.
-6. **Playbook Integration:** One-click navigation to the Flag Football QB Playbook.

@@ -1,12 +1,14 @@
 {
   "name": "soedirman-bowl",
   "version": "1.0.0",
-  "description": "Soedirman Bowl - Online Server-Sided Flag Football App on Cloudflare Workers & D1",
+  "description": "Soedirman Bowl - Online Server-Sided Flag Football App on Cloudflare Pages / Workers & D1",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "pages:dev": "wrangler pages dev public --d1=DB=soedirman-bowl-db",
+    "pages:deploy": "wrangler pages deploy public",
     "d1:create": "wrangler d1 create soedirman-bowl-db",
     "d1:init:local": "wrangler d1 execute soedirman-bowl-db --local --file=./schema.sql",
     "d1:init:remote": "wrangler d1 execute soedirman-bowl-db --remote --file=./schema.sql"
@@ -14,6 +16,7 @@
   "keywords": [
     "flag-football",
     "soedirman-bowl",
+    "cloudflare-pages",
     "cloudflare-workers",
     "cloudflare-d1"
   ],
