@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <radialGradient id="ballShade" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#b85824"/>
+      <stop offset="60%" stop-color="#8d3f18"/>
+      <stop offset="100%" stop-color="#552008"/>
+    </radialGradient>
+  </defs>
+  <g transform="rotate(-40 16 16)">
+    <!-- Ball body -->
+    <ellipse cx="16" cy="16" rx="14.5" ry="9.5" fill="url(#ballShade)" stroke="#3a1403" stroke-width="1.2"/>
+    <!-- White stripes -->
+    <path d="M4.5 10.5 Q16 13 27.5 10.5" fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.9"/>
+    <path d="M4.5 21.5 Q16 19 27.5 21.5" fill="none" stroke="#ffffff" stroke-width="1.4" opacity="0.9"/>
+    <!-- Center seam & laces -->
+    <line x1="7.5" y1="16" x2="24.5" y2="16" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="11.5" y1="13.5" x2="11.5" y2="18.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="16" y1="13" x2="16" y2="19" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="20.5" y1="13.5" x2="20.5" y2="18.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

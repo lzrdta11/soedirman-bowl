@@ -1,6 +1,6 @@
 # 🏈 Soedirman Bowl — Online Cloudflare Flag Football Platform
 
-A fully online, server-sided, real-time web platform for **Soedirman Bowl (Generals vs Commandos)** bi-weekly flag football matches, powered by **Cloudflare Pages / Workers** and **Cloudflare D1 Database**.
+A fully online, server-sided, real-time web platform for **Soedirman Bowl (Generals vs Commandos)** flag football matches, powered by **Cloudflare Pages / Workers** and **Cloudflare D1 Database**.
 
 ---
 
