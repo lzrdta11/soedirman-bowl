@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>QB Playbook · Flag Football</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #111111;
+      --text-muted: #666666;
+      --border: #cccccc;
+      --border-dark: #333333;
+      --primary-route: #dc2626; /* Preferred / 1st Read Route */
+      --route-blue: #2563eb;
+      --route-green: #059669;
+      --route-purple: #7c3aed;
+      --ball-color: #854d0e;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: #ffffff;
+      color: var(--text);
+      font-family: var(--font-stack);
+    }
+
+    /* ==========================================================
+       SIMPLE 2010s TOP BAR (CLEAN & NON-OVERWHELMING)
+       ========================================================== */
+    #top-bar {
+      height: 44px;
+      background: #f8f8f8;
+      border-bottom: 1px solid #d0d0d0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      z-index: 50;
+    }
+
+    .bar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-simple {
+      background: #ffffff;
+      border: 1px solid #c0c0c0;
+      color: #111111;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 32px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .btn-simple:active {
+      background: #e9e9e9;
+      border-color: #999999;
+    }
+
+    .btn-simple.icon-only {
+      width: 32px;
+      padding: 0;
+      font-size: 14px;
+    }
+
+    .btn-simple.active {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+    }
+
+    .btn-play {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+      font-weight: 700;
+    }
+    .btn-play:active {
+      background: #444444;
+    }
+
+    /* Play Title */
+    #play-title-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 48%;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    #play-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000000;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .simple-tag {
+      font-size: 10px;
+      font-weight: 700;
+      border: 1px solid #888888;
+      border-radius: 3px;
+      padding: 1px 4px;
+      text-transform: uppercase;
+      color: #333333;
+    }
+
+    .preferred-legend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #dc2626;
+      border: 1px solid #dc2626;
+      background: #fee2e2;
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+
+    /* ==========================================================
+       MAIN WHITE FIELD STAGE
+       ========================================================== */
+    #field-stage {
+      width: 100vw;
+      height: calc(100vh - 44px);
+      height: calc(100dvh - 44px);
+      position: relative;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #field-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #ffffff;
+    }
+
+    /* Next / Prev field edge click areas */
+    .edge-nav {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 300;
+      color: #cccccc;
+      cursor: pointer;
+      z-index: 20;
+    }
+    .edge-nav:hover, .edge-nav:active {
+      color: #000000;
+      background: rgba(0,0,0,0.03);
+    }
+    .edge-left { left: 0; }
+    .edge-right { right: 0; }
+
+    /* ==========================================================
+       DRAWER / PLAYBOOK LIST (CLASSIC 2010s CLEAN TABLE VIEW)
+       ========================================================== */
+    #drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 99;
+    }
+    #drawer-overlay.open { display: block; }
+
+    #play-drawer {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 320px;
+      max-width: 85vw;
+      background: #ffffff;
+      border-right: 1px solid #d0d0d0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.2s ease-out;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.15);
+    }
+    #play-drawer.open { transform: translateX(0); }
+
+    .drawer-top {
+      height: 44px;
+      background: #f8f8f8;
+      border-bottom: 1px solid #d0d0d0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .filter-bar {
+      padding: 8px 10px;
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .seg-group {
+      display: flex;
+      border: 1px solid #b0b0b0;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .seg-item {
+      flex: 1;
+      border: none;
+      border-right: 1px solid #d0d0d0;
+      background: #ffffff;
+      color: #444444;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 0;
+      cursor: pointer;
+      text-align: center;
+    }
+    .seg-item:last-child { border-right: none; }
+    .seg-item.active {
+      background: #333333;
+      color: #ffffff;
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .chip-row::-webkit-scrollbar { display: none; }
+
+    .chip {
+      background: #ffffff;
+      border: 1px solid #c0c0c0;
+      color: #333333;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 3px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: #000000;
+      color: #ffffff;
+      border-color: #000000;
+    }
+
+    .drawer-list {
+      flex: 1;
+      overflow-y: auto;
+      background: #ffffff;
+    }
+
+    .list-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eeeeee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .list-item:active { background: #f2f2f2; }
+    .list-item.selected {
+      background: #f0f0f0;
+      border-left: 4px solid #111111;
+      font-weight: 700;
+    }
+
+    .item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+    .item-title {
+      font-size: 13px;
+      color: #111111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-sub {
+      font-size: 10px;
+      color: #777777;
+      display: flex;
+      gap: 6px;
+    }
+
+    .star-btn {
+      background: none;
+      border: none;
+      font-size: 17px;
+      color: #cccccc;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .star-btn.starred {
+      color: #f59e0b;
+    }
+
+    .drawer-bottom {
+      padding: 8px 10px;
+      background: #f8f8f8;
+      border-top: 1px solid #d0d0d0;
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ==========================================================
+       CREATE PLAY MODAL (CLEAN 2010s POPUP)
+       ========================================================== */
+    #creator-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      z-index: 150;
+      flex-direction: column;
+    }
+    #creator-modal.open { display: flex; }
+
+    .creator-nav {
+      height: 44px;
+      background: #f8f8f8;
+      border-bottom: 1px solid #d0d0d0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .creator-layout {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .creator-controls {
+      width: 250px;
+      background: #fafafa;
+      border-right: 1px solid #d0d0d0;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+    }
+
+    .c-field-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: #555555;
+      text-transform: uppercase;
+    }
+
+    .c-text-input, .c-select-input {
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #cccccc;
+      border-radius: 3px;
+      padding: 4px 6px;
+      font-size: 12px;
+      color: #111111;
+      outline: none;
+    }
+
+    .c-players-list {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .c-p-btn {
+      padding: 4px 8px;
+      background: #ffffff;
+      border: 1px solid #cccccc;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .c-p-btn.active {
+      background: #111111;
+      color: #ffffff;
+      border-color: #111111;
+    }
+
+    .c-routes-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 3px;
+    }
+
+    .c-r-btn {
+      background: #ffffff;
+      border: 1px solid #cccccc;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 5px 2px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    .c-r-btn:active {
+      background: #e0e0e0;
+    }
+
+    .creator-canvas-area {
+      flex: 1;
+      position: relative;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #111111;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s ease;
+      z-index: 200;
+    }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Simple Navigation Bar -->
+  <header id="top-bar">
+    <div class="bar-group">
+      <button class="btn-simple" onclick="openDrawer()">
+        ☰ <b>Plays</b>
+      </button>
+      <button class="btn-simple icon-only" onclick="navigatePlay(-1)" title="Previous Play">
+        ◀
+      </button>
+      <button class="btn-simple icon-only" onclick="navigatePlay(1)" title="Next Play">
+        ▶
+      </button>
+    </div>
+
+    <!-- Play Title & Tags -->
+    <div id="play-title-box">
+      <span id="play-title">Mesh Cross</span>
+      <span class="simple-tag" id="tag-format">5v5</span>
+      <span class="simple-tag" id="tag-type">PASS</span>
+      <span class="simple-tag" id="tag-def">VS MAN</span>
+      <span class="preferred-legend-badge">★ Target: <span id="tag-target">X</span></span>
+    </div>
+
+    <div class="bar-group">
+      <!-- Star / Favorite -->
+      <button class="btn-simple icon-only star-btn" id="btn-fav" onclick="toggleCurrentFavorite()" title="Favorite">
+        ★
+      </button>
+      <!-- Defense Ghost Toggle -->
+      <button class="btn-simple" id="btn-def-toggle" onclick="toggleDefense()" title="Toggle Defense">
+        Defense
+      </button>
+      <!-- Simple Play Animation Button -->
+      <button class="btn-simple btn-play" id="btn-anim-play" onclick="toggleAnimation()">
+        ▶ Play
+      </button>
+    </div>
+  </header>
+
+  <!-- White Chalkboard / Field Canvas -->
+  <main id="field-stage">
+    <!-- Clickable edge arrows for flipping plays -->
+    <div class="edge-nav edge-left" onclick="navigatePlay(-1)">‹</div>
+    <div class="edge-nav edge-right" onclick="navigatePlay(1)">›</div>
+
+    <svg id="field-svg" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Route Arrowheads: Preferred (Red), Secondary (Blue), Tertiary (Green), Outlet (Purple) -->
+        <marker id="arrow-primary" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
+        </marker>
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+        </marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#7c3aed" />
+        </marker>
+        <marker id="arrow-black" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#111111" />
+        </marker>
+      </defs>
+
+      <!-- White Field with Clean Colored Tactical Yard Lines -->
+      <g id="field-markings">
+        <!-- Field Border -->
+        <rect x="40" y="20" width="920" height="520" fill="#ffffff" stroke="#222222" stroke-width="2" />
+
+        <!-- End Zone (y = 20 to 90) -->
+        <rect x="40" y="20" width="920" height="70" fill="rgba(37, 99, 235, 0.05)" />
+        <line x1="40" y1="90" x2="960" y2="90" stroke="#111111" stroke-width="3" />
+        <text x="500" y="60" fill="#cccccc" font-size="20" font-weight="800" text-anchor="middle" letter-spacing="8">END ZONE</text>
+
+        <!-- 5-yd reference line (y = 175) -->
+        <line x1="40" y1="175" x2="960" y2="175" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="6,6" />
+
+        <!-- First Down / Midfield Line (y = 260, Gold) -->
+        <line x1="40" y1="260" x2="960" y2="260" stroke="#d97706" stroke-width="2.5" />
+        <text x="50" y="253" fill="#d97706" font-size="10" font-weight="800">MIDFIELD · 1ST DOWN</text>
+
+        <!-- 7-Yard Rush Line (y = 360, Red) -->
+        <line x1="40" y1="360" x2="960" y2="360" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,4" />
+        <text x="50" y="353" fill="#dc2626" font-size="10" font-weight="800">7-YD RUSH LINE</text>
+
+        <!-- Line of Scrimmage (LOS) (y = 430, Blue) -->
+        <line x1="40" y1="430" x2="960" y2="430" stroke="#2563eb" stroke-width="3" />
+        <text x="50" y="423" fill="#2563eb" font-size="10" font-weight="900">LINE OF SCRIMMAGE (LOS)</text>
+
+        <!-- Hashes -->
+        <line x1="480" y1="260" x2="520" y2="260" stroke="#d97706" stroke-width="1.5" />
+        <line x1="480" y1="360" x2="520" y2="360" stroke="#dc2626" stroke-width="1.5" />
+        <line x1="480" y1="430" x2="520" y2="430" stroke="#2563eb" stroke-width="1.5" />
+      </g>
+
+      <!-- Defense Layer (Ghost defenders) -->
+      <g id="layer-defense"></g>
+
+      <!-- Offensive Routes (Colored Routes, Bold Red for Preferred) -->
+      <g id="layer-routes"></g>
+
+      <!-- Pass dotted flight line -->
+      <g id="layer-pass"></g>
+
+      <!-- Animated Players -->
+      <g id="layer-players"></g>
+
+      <!-- Realistic Colored Football -->
+      <g id="layer-ball"></g>
+    </svg>
+  </main>
+
+  <!-- Left Drawer: Plays List & Simple Filters -->
+  <div id="drawer-overlay" onclick="closeDrawer()"></div>
+  <aside id="play-drawer">
+    <div class="drawer-top">
+      <span>FLAG PLAYBOOK</span>
+      <button class="btn-simple icon-only" onclick="closeDrawer()" style="height:28px; width:28px;">✕</button>
+    </div>
+
+    <!-- Segmented Filters -->
+    <div class="filter-bar">
+      <!-- 4v4 vs 5v5 -->
+      <div class="seg-group">
+        <button class="seg-item active" id="seg-fmt-all" onclick="setFormat('all')">ALL</button>
+        <button class="seg-item" id="seg-fmt-5v5" onclick="setFormat('5v5')">5v5</button>
+        <button class="seg-item" id="seg-fmt-4v4" onclick="setFormat('4v4')">4v4</button>
+      </div>
+
+      <!-- Pass vs Run -->
+      <div class="chip-row">
+        <button class="chip active" id="chip-t-all" onclick="setType('all')">All</button>
+        <button class="chip" id="chip-t-pass" onclick="setType('pass')">Pass</button>
+        <button class="chip" id="chip-t-run" onclick="setType('run')">Run</button>
+        <button class="chip" id="chip-fav-only" onclick="toggleFavFilter()">★ Favs</button>
+      </div>
+
+      <!-- Defensive Target -->
+      <div class="chip-row">
+        <button class="chip active" id="chip-d-all" onclick="setDefense('all')">All Defenses</button>
+        <button class="chip" id="chip-d-man" onclick="setDefense('man')">vs Man</button>
+        <button class="chip" id="chip-d-cov2" onclick="setDefense('cover2')">vs Cover 2</button>
+        <button class="chip" id="chip-d-cov3" onclick="setDefense('cover3')">vs Cover 3</button>
+        <button class="chip" id="chip-d-cov1" onclick="setDefense('cover1')">vs Cover 1</button>
+        <button class="chip" id="chip-d-blitz" onclick="setDefense('blitz')">vs Blitz</button>
+      </div>
+    </div>
+
+    <!-- List of plays -->
+    <div class="drawer-list" id="drawer-list-items"></div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="drawer-bottom">
+      <button class="btn-simple" style="flex:1; background:#111; color:#fff;" onclick="openCreator()">
+        + New Play
+      </button>
+      <button class="btn-simple icon-only" onclick="exportPlaybook()" title="Export JSON">💾</button>
+      <label class="btn-simple icon-only" title="Import JSON" style="cursor:pointer;">
+        📂
+        <input type="file" accept=".json" onchange="importPlaybook(event)" style="display:none;">
+      </label>
+    </div>
+  </aside>
+
+  <!-- Creator Modal -->
+  <div id="creator-modal">
+    <div class="creator-nav">
+      <span>CREATE PLAY</span>
+      <div style="display:flex; gap:6px;">
+        <button class="btn-simple" onclick="saveCustomPlay()" style="background:#111; color:#fff;">Save</button>
+        <button class="btn-simple icon-only" onclick="closeCreator()">✕</button>
+      </div>
+    </div>
+
+    <div class="creator-layout">
+      <!-- Left simple panel -->
+      <div class="creator-controls">
+        <label class="c-field-label">Play Name</label>
+        <input type="text" class="c-text-input" id="c-name" value="Custom Play">
+
+        <div style="display:flex; gap:4px;">
+          <div style="flex:1;">
+            <label class="c-field-label">Format</label>
+            <select class="c-select-input" id="c-fmt" onchange="handleCreatorFormat(this.value)">
+              <option value="5v5">5v5</option>
+              <option value="4v4">4v4</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label class="c-field-label">Type</label>
+            <select class="c-select-input" id="c-type">
+              <option value="pass">Pass</option>
+              <option value="run">Run</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="c-field-label">Effective Against</label>
+          <select class="c-select-input" id="c-def">
+            <option value="man">Man-to-Man</option>
+            <option value="cover2">Cover 2</option>
+            <option value="cover3">Cover 3</option>
+            <option value="cover1">Cover 1</option>
+            <option value="blitz">Blitz / Rush</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="c-field-label">Select Player to Route</label>
+          <div class="c-players-list" id="c-players-box"></div>
+        </div>
+
+        <div>
+          <label class="c-field-label">Preferred Target / 1st Read?</label>
+          <select class="c-select-input" id="c-is-primary" onchange="handleCreatorPrimaryToggle(this.value)">
+            <option value="yes">★ Yes (Preferred Route - Red)</option>
+            <option value="no">No (Secondary Route - Blue/Green)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="c-field-label">Assign Quick Route</label>
+          <div class="c-routes-list">
+            <button class="c-r-btn" onclick="applyRoute('slant')">Slant</button>
+            <button class="c-r-btn" onclick="applyRoute('out')">Out</button>
+            <button class="c-r-btn" onclick="applyRoute('in')">Dig / In</button>
+            <button class="c-r-btn" onclick="applyRoute('post')">Post</button>
+            <button class="c-r-btn" onclick="applyRoute('corner')">Corner</button>
+            <button class="c-r-btn" onclick="applyRoute('fly')">Go / Fly</button>
+            <button class="c-r-btn" onclick="applyRoute('hitch')">Hitch</button>
+            <button class="c-r-btn" onclick="applyRoute('drag')">Drag</button>
+            <button class="c-r-btn" onclick="applyRoute('wheel')">Wheel</button>
+            <button class="c-r-btn" onclick="applyRoute('screen')">Screen</button>
+            <button class="c-r-btn" onclick="applyRoute('flat')">Flat</button>
+            <button class="c-r-btn" onclick="applyRoute('delay')">Delay</button>
+          </div>
+        </div>
+
+        <div style="font-size:9px; color:#888; margin-top:auto;">
+          Tip: Tap canvas directly to draw extra route cuts!
+        </div>
+      </div>
+
+      <!-- Right white canvas -->
+      <div class="creator-canvas-area">
+        <svg id="creator-svg" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" style="width:100%; height:100%;" onclick="handleCreatorClick(event)">
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">Saved!</div>
+
+  <script>
+    /* ==========================================================
+       DATA: 4v4 & 5v5 FLAG FOOTBALL PLAYS
+       Preferred Route = #dc2626 (Red, thick solid)
+       Other Routes = #2563eb (Blue), #059669 (Green), #7c3aed (Purple)
+       LOS = 430, 7yd Rush = 360, 1st Down = 260, Endzone = 90
+       ========================================================== */
+    const DEFAULT_PLAYS = [
+      {
+        id: "5v5-mesh",
+        name: "Mesh Cross",
+        format: "5v5",
+        type: "pass",
+        defenseTarget: "man",
+        defenseName: "Man-to-Man",
+        defense: {
+          players: [
+            { id: "CB1", x: 220, y: 390, label: "CB" },
+            { id: "CB2", x: 780, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S", x: 600, y: 300, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:485, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:370}, {x:510, y:340}], color: "#059669" },
+          { id: "X", label: "X", x: 200, y: 430, path: [{x:200, y:430}, {x:230, y:380}, {x:460, y:375}, {x:760, y:370}], isPrimary: true, color: "#dc2626" },
+          { id: "Z", label: "Z", x: 800, y: 430, path: [{x:800, y:430}, {x:770, y:365}, {x:530, y:360}, {x:240, y:355}], color: "#2563eb" },
+          { id: "H", label: "H", x: 440, y: 490, path: [{x:440, y:490}, {x:600, y:460}, {x:850, y:420}], color: "#7c3aed" }
+        ],
+        passTiming: { release: 0.65, targetPlayer: "X" }
+      },
+      {
+        id: "5v5-smash",
+        name: "Smash Concept",
+        format: "5v5",
+        type: "pass",
+        defenseTarget: "cover2",
+        defenseName: "Cover 2",
+        defense: {
+          players: [
+            { id: "CB1", x: 220, y: 390, label: "CB" },
+            { id: "CB2", x: 780, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S1", x: 300, y: 220, label: "S" },
+            { id: "S2", x: 700, y: 220, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:480, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:280}, {x:530, y:180}], color: "#059669" },
+          { id: "X", label: "X", x: 180, y: 430, path: [{x:180, y:430}, {x:180, y:350}, {x:190, y:360}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 280, y: 430, path: [{x:280, y:430}, {x:270, y:330}, {x:130, y:170}], isPrimary: true, color: "#dc2626" },
+          { id: "H", label: "H", x: 820, y: 430, path: [{x:820, y:430}, {x:820, y:320}, {x:680, y:320}], color: "#7c3aed" }
+        ],
+        passTiming: { release: 0.72, targetPlayer: "Z" }
+      },
+      {
+        id: "5v5-flood",
+        name: "Trips Flood",
+        format: "5v5",
+        type: "pass",
+        defenseTarget: "cover3",
+        defenseName: "Cover 3",
+        defense: {
+          players: [
+            { id: "CB1", x: 200, y: 250, label: "CB" },
+            { id: "FS", x: 500, y: 200, label: "FS" },
+            { id: "CB2", x: 820, y: 250, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:515, y:490}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:620, y:410}, {x:860, y:400}], color: "#059669" },
+          { id: "X", label: "X", x: 180, y: 430, path: [{x:180, y:430}, {x:180, y:300}, {x:380, y:240}], color: "#7c3aed" },
+          { id: "H", label: "H", x: 680, y: 430, path: [{x:680, y:430}, {x:690, y:300}, {x:880, y:300}], isPrimary: true, color: "#dc2626" },
+          { id: "Z", label: "Z", x: 820, y: 430, path: [{x:820, y:430}, {x:820, y:120}], color: "#2563eb" }
+        ],
+        passTiming: { release: 0.68, targetPlayer: "H" }
+      },
+      {
+        id: "5v5-jet-sweep",
+        name: "Jet Sweep Option",
+        format: "5v5",
+        type: "run",
+        defenseTarget: "man",
+        defenseName: "Man-to-Man",
+        defense: {
+          players: [
+            { id: "CB1", x: 200, y: 390, label: "CB" },
+            { id: "CB2", x: 800, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S", x: 500, y: 260, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:480, y:485}, {x:460, y:450}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:380}, {x:460, y:340}], color: "#059669" },
+          { id: "H", label: "H", x: 740, y: 475, path: [{x:740, y:475}, {x:510, y:480}, {x:240, y:460}, {x:120, y:360}], isPrimary: true, color: "#dc2626" },
+          { id: "X", label: "X", x: 180, y: 430, path: [{x:180, y:430}, {x:200, y:360}, {x:320, y:350}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 820, y: 430, path: [{x:820, y:430}, {x:820, y:200}], color: "#7c3aed" }
+        ],
+        passTiming: { release: 0.45, targetPlayer: "H" }
+      },
+      {
+        id: "5v5-blitz-hot",
+        name: "Hot Slant Void",
+        format: "5v5",
+        type: "pass",
+        defenseTarget: "blitz",
+        defenseName: "Blitz / Rush",
+        defense: {
+          players: [
+            { id: "RUSH1", x: 500, y: 360, label: "BLITZ" },
+            { id: "CB1", x: 200, y: 380, label: "CB" },
+            { id: "CB2", x: 800, y: 380, label: "CB" },
+            { id: "S", x: 500, y: 220, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:490, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:520, y:380}], color: "#059669" },
+          { id: "X", label: "X", x: 220, y: 430, path: [{x:220, y:430}, {x:240, y:390}, {x:440, y:340}], isPrimary: true, color: "#dc2626" },
+          { id: "H", label: "H", x: 340, y: 450, path: [{x:340, y:450}, {x:140, y:410}, {x:120, y:200}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 780, y: 430, path: [{x:780, y:430}, {x:760, y:320}, {x:600, y:300}], color: "#7c3aed" }
+        ],
+        passTiming: { release: 0.48, targetPlayer: "X" }
+      },
+      {
+        id: "5v5-scissors",
+        name: "Scissors Split",
+        format: "5v5",
+        type: "pass",
+        defenseTarget: "cover1",
+        defenseName: "Cover 1",
+        defense: {
+          players: [
+            { id: "CB1", x: 220, y: 390, label: "CB" },
+            { id: "CB2", x: 780, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "FS", x: 500, y: 200, label: "FS" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:485, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:360}], color: "#059669" },
+          { id: "X", label: "X", x: 220, y: 430, path: [{x:220, y:430}, {x:240, y:280}, {x:120, y:140}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 320, y: 430, path: [{x:320, y:430}, {x:310, y:300}, {x:560, y:150}], isPrimary: true, color: "#dc2626" },
+          { id: "H", label: "H", x: 780, y: 430, path: [{x:780, y:430}, {x:780, y:320}, {x:650, y:300}], color: "#7c3aed" }
+        ],
+        passTiming: { release: 0.75, targetPlayer: "Z" }
+      },
+      {
+        id: "5v5-qb-draw",
+        name: "QB Draw Delay",
+        format: "5v5",
+        type: "run",
+        defenseTarget: "cover2",
+        defenseName: "Cover 2",
+        defense: {
+          players: [
+            { id: "CB1", x: 220, y: 280, label: "CB" },
+            { id: "CB2", x: 780, y: 280, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S1", x: 350, y: 190, label: "S" },
+            { id: "S2", x: 650, y: 190, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:500, y:500}, {x:510, y:450}, {x:500, y:200}], isPasser: false, isPrimary: true, color: "#dc2626" },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:400, y:300}, {x:360, y:180}], color: "#059669" },
+          { id: "X", label: "X", x: 180, y: 430, path: [{x:180, y:430}, {x:180, y:160}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 820, y: 430, path: [{x:820, y:430}, {x:820, y:160}], color: "#7c3aed" },
+          { id: "H", label: "H", x: 650, y: 430, path: [{x:650, y:430}, {x:620, y:160}], color: "#2563eb" }
+        ],
+        passTiming: { release: 0.85, targetPlayer: "QB" }
+      },
+
+      /* ================= 4v4 PLAYS ================= */
+      {
+        id: "4v4-rub-slant",
+        name: "4v4 Rub & Cross",
+        format: "4v4",
+        type: "pass",
+        defenseTarget: "man",
+        defenseName: "Man-to-Man",
+        defense: {
+          players: [
+            { id: "CB1", x: 260, y: 390, label: "CB" },
+            { id: "CB2", x: 740, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S", x: 480, y: 280, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:485, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:470, y:360}, {x:470, y:340}], color: "#059669" },
+          { id: "X", label: "X", x: 240, y: 430, path: [{x:240, y:430}, {x:320, y:390}, {x:490, y:365}, {x:750, y:340}], isPrimary: true, color: "#dc2626" },
+          { id: "Z", label: "Z", x: 760, y: 430, path: [{x:760, y:430}, {x:760, y:280}, {x:740, y:300}], color: "#2563eb" }
+        ],
+        passTiming: { release: 0.62, targetPlayer: "X" }
+      },
+      {
+        id: "4v4-hilo-dig",
+        name: "4v4 High-Low Dig",
+        format: "4v4",
+        type: "pass",
+        defenseTarget: "cover2",
+        defenseName: "Cover 2",
+        defense: {
+          players: [
+            { id: "CB", x: 250, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S1", x: 350, y: 220, label: "S" },
+            { id: "S2", x: 650, y: 220, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:510, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:640, y:380}, {x:780, y:310}], color: "#059669" },
+          { id: "X", label: "X", x: 220, y: 430, path: [{x:220, y:430}, {x:240, y:390}, {x:680, y:390}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 780, y: 430, path: [{x:780, y:430}, {x:770, y:280}, {x:400, y:280}], isPrimary: true, color: "#dc2626" }
+        ],
+        passTiming: { release: 0.66, targetPlayer: "Z" }
+      },
+      {
+        id: "4v4-counter-reverse",
+        name: "4v4 Counter Reverse",
+        format: "4v4",
+        type: "run",
+        defenseTarget: "blitz",
+        defenseName: "Blitz / Rush",
+        defense: {
+          players: [
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "CB1", x: 300, y: 380, label: "CB" },
+            { id: "CB2", x: 700, y: 380, label: "CB" },
+            { id: "S", x: 500, y: 240, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:530, y:475}, {x:510, y:480}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:450, y:320}, {x:430, y:200}], color: "#059669" },
+          { id: "X", label: "X", x: 300, y: 430, path: [{x:300, y:430}, {x:480, y:475}, {x:750, y:440}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 700, y: 430, path: [{x:700, y:430}, {x:520, y:485}, {x:250, y:460}, {x:130, y:340}], isPrimary: true, color: "#dc2626" }
+        ],
+        passTiming: { release: 0.50, targetPlayer: "Z" }
+      },
+      {
+        id: "4v4-out-and-up",
+        name: "4v4 Out-and-Up",
+        format: "4v4",
+        type: "pass",
+        defenseTarget: "man",
+        defenseName: "Man-to-Man",
+        defense: {
+          players: [
+            { id: "CB1", x: 240, y: 390, label: "CB" },
+            { id: "CB2", x: 760, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S", x: 500, y: 280, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:490, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:330}, {x:510, y:340}], color: "#059669" },
+          { id: "X", label: "X", x: 220, y: 430, path: [{x:220, y:430}, {x:210, y:360}, {x:110, y:360}], color: "#2563eb" },
+          { id: "Z", label: "Z", x: 780, y: 430, path: [{x:780, y:430}, {x:780, y:360}, {x:850, y:360}, {x:860, y:140}], isPrimary: true, color: "#dc2626" }
+        ],
+        passTiming: { release: 0.76, targetPlayer: "Z" }
+      },
+      {
+        id: "4v4-post-corner",
+        name: "4v4 Post-Corner",
+        format: "4v4",
+        type: "pass",
+        defenseTarget: "cover1",
+        defenseName: "Cover 1",
+        defense: {
+          players: [
+            { id: "CB1", x: 240, y: 390, label: "CB" },
+            { id: "CB2", x: 760, y: 390, label: "CB" },
+            { id: "RUSH", x: 500, y: 360, label: "RUSH" },
+            { id: "S", x: 500, y: 220, label: "S" }
+          ]
+        },
+        players: [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:510, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:480, y:370}], color: "#059669" },
+          { id: "X", label: "X", x: 220, y: 430, path: [{x:220, y:430}, {x:240, y:280}, {x:520, y:150}], isPrimary: true, color: "#dc2626" },
+          { id: "Z", label: "Z", x: 780, y: 430, path: [{x:780, y:430}, {x:760, y:280}, {x:880, y:150}], color: "#2563eb" }
+        ],
+        passTiming: { release: 0.74, targetPlayer: "X" }
+      }
+    ];
+
+    /* ==========================================================
+       APP STATE
+       ========================================================== */
+    let currentPlays = [];
+    let activePlay = null;
+    let favorites = new Set();
+    let filterFmt = 'all';
+    let filterType = 'all';
+    let filterDef = 'all';
+    let filterFavOnly = false;
+    let showDefense = false;
+
+    // Animation state
+    let isPlaying = false;
+    let animProgress = 0.0;
+    let animTotalDuration = 3.2; // seconds
+    let lastAnimTime = 0;
+    let animFrameReq = null;
+
+    // Creator State
+    let creatorPlay = null;
+    let creatorSelectedPlayer = null;
+
+    /* ==========================================================
+       INITIALIZATION
+       ========================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      renderDrawerList();
+      selectPlay(currentPlays[0] ? currentPlays[0].id : DEFAULT_PLAYS[0].id);
+      setupSwipe();
+    });
+
+    function loadData() {
+      try {
+        const savedFavs = localStorage.getItem('qb_playbook_favs');
+        if (savedFavs) favorites = new Set(JSON.parse(savedFavs));
+      } catch (e) {}
+
+      try {
+        const savedCustom = localStorage.getItem('qb_playbook_custom');
+        if (savedCustom) {
+          const list = JSON.parse(savedCustom);
+          currentPlays = [...DEFAULT_PLAYS, ...list];
+        } else {
+          currentPlays = [...DEFAULT_PLAYS];
+        }
+      } catch (e) {
+        currentPlays = [...DEFAULT_PLAYS];
+      }
+    }
+
+    function saveCustomToStorage() {
+      const custom = currentPlays.filter(p => !DEFAULT_PLAYS.some(dp => dp.id === p.id));
+      localStorage.setItem('qb_playbook_custom', JSON.stringify(custom));
+    }
+
+    function saveFavsToStorage() {
+      localStorage.setItem('qb_playbook_favs', JSON.stringify(Array.from(favorites)));
+    }
+
+    /* ==========================================================
+       FILTERING & NAVIGATION
+       ========================================================== */
+    function setFormat(fmt) {
+      filterFmt = fmt;
+      document.querySelectorAll('#seg-fmt-all, #seg-fmt-5v5, #seg-fmt-4v4').forEach(b => b.classList.remove('active'));
+      const el = document.getElementById(`seg-fmt-${fmt}`);
+      if (el) el.classList.add('active');
+      renderDrawerList();
+      selectFirstMatch();
+    }
+
+    function setType(t) {
+      filterType = t;
+      document.querySelectorAll('#chip-t-all, #chip-t-pass, #chip-t-run').forEach(b => b.classList.remove('active'));
+      const el = document.getElementById(`chip-t-${t}`);
+      if (el) el.classList.add('active');
+      renderDrawerList();
+      selectFirstMatch();
+    }
+
+    function setDefense(def) {
+      filterDef = def;
+      document.querySelectorAll('#chip-d-all, #chip-d-man, #chip-d-cov2, #chip-d-cov3, #chip-d-cov1, #chip-d-blitz').forEach(b => b.classList.remove('active'));
+      const idMap = { all: 'chip-d-all', man: 'chip-d-man', cover2: 'chip-d-cov2', cover3: 'chip-d-cov3', cover1: 'chip-d-cov1', blitz: 'chip-d-blitz' };
+      if (idMap[def]) document.getElementById(idMap[def]).classList.add('active');
+      renderDrawerList();
+      selectFirstMatch();
+    }
+
+    function toggleFavFilter() {
+      filterFavOnly = !filterFavOnly;
+      const b = document.getElementById('chip-fav-only');
+      if (filterFavOnly) b.classList.add('active');
+      else b.classList.remove('active');
+      renderDrawerList();
+      selectFirstMatch();
+    }
+
+    function getFilteredPlays() {
+      return currentPlays.filter(p => {
+        if (filterFmt !== 'all' && p.format !== filterFmt) return false;
+        if (filterType !== 'all' && p.type !== filterType) return false;
+        if (filterDef !== 'all' && p.defenseTarget !== filterDef) return false;
+        if (filterFavOnly && !favorites.has(p.id)) return false;
+        return true;
+      });
+    }
+
+    function selectFirstMatch() {
+      const filtered = getFilteredPlays();
+      if (filtered.length > 0) {
+        if (!activePlay || !filtered.some(p => p.id === activePlay.id)) {
+          selectPlay(filtered[0].id);
+        }
+      }
+    }
+
+    function renderDrawerList() {
+      const container = document.getElementById('drawer-list-items');
+      const filtered = getFilteredPlays();
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="padding:20px; text-align:center; color:#999; font-size:12px;">No plays found.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(p => {
+        const isFav = favorites.has(p.id);
+        const isCur = activePlay && activePlay.id === p.id;
+        const targetP = p.players.find(pl => pl.isPrimary);
+        const targetLabel = targetP ? targetP.label : (p.passTiming ? p.passTiming.targetPlayer : 'WR');
+
+        return `
+          <div class="list-item ${isCur ? 'selected' : ''}" onclick="selectPlay('${p.id}'); closeDrawer();">
+            <div class="item-text">
+              <span class="item-title">${p.name}</span>
+              <span class="item-sub">
+                <span>${p.format}</span> • <span>${p.type.toUpperCase()}</span> • <span>${p.defenseName}</span> • <span style="color:#dc2626; font-weight:700;">★ ${targetLabel}</span>
+              </span>
+            </div>
+            <button class="star-btn ${isFav ? 'starred' : ''}" onclick="event.stopPropagation(); toggleFav('${p.id}')">
+              ★
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectPlay(id) {
+      const play = currentPlays.find(p => p.id === id);
+      if (!play) return;
+
+      activePlay = play;
+      renderDrawerList();
+      resetAnimation();
+
+      document.getElementById('play-title').textContent = play.name;
+      document.getElementById('tag-format').textContent = play.format;
+      document.getElementById('tag-type').textContent = play.type.toUpperCase();
+      document.getElementById('tag-def').textContent = `VS ${play.defenseName.toUpperCase()}`;
+
+      const targetP = play.players.find(pl => pl.isPrimary);
+      const targetLabel = targetP ? targetP.label : (play.passTiming ? play.passTiming.targetPlayer : 'X');
+      document.getElementById('tag-target').textContent = targetLabel;
+
+      updateFavIcon();
+      renderField();
+    }
+
+    function navigatePlay(dir) {
+      const filtered = getFilteredPlays();
+      if (filtered.length <= 1) return;
+
+      const idx = filtered.findIndex(p => p.id === activePlay.id);
+      let next = idx + dir;
+      if (next < 0) next = filtered.length - 1;
+      if (next >= filtered.length) next = 0;
+
+      selectPlay(filtered[next].id);
+    }
+
+    function toggleFav(id) {
+      if (favorites.has(id)) {
+        favorites.delete(id);
+        showToast('Removed favorite');
+      } else {
+        favorites.add(id);
+        showToast('Added to favorites! ★');
+      }
+      saveFavsToStorage();
+      renderDrawerList();
+      updateFavIcon();
+    }
+
+    function toggleCurrentFavorite() {
+      if (activePlay) toggleFav(activePlay.id);
+    }
+
+    function updateFavIcon() {
+      const b = document.getElementById('btn-fav');
+      if (activePlay && favorites.has(activePlay.id)) {
+        b.classList.add('starred');
+      } else {
+        b.classList.remove('starred');
+      }
+    }
+
+    function toggleDefense() {
+      showDefense = !showDefense;
+      const b = document.getElementById('btn-def-toggle');
+      if (showDefense) b.classList.add('active');
+      else b.classList.remove('active');
+      renderDefenseLayer();
+    }
+
+    function openDrawer() {
+      document.getElementById('play-drawer').classList.add('open');
+      document.getElementById('drawer-overlay').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('play-drawer').classList.remove('open');
+      document.getElementById('drawer-overlay').classList.remove('open');
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 1600);
+    }
+
+    function setupSwipe() {
+      const stage = document.getElementById('field-stage');
+      let startX = 0;
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) startX = e.touches[0].clientX;
+      }, { passive: true });
+      stage.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length === 1) {
+          const dx = e.changedTouches[0].clientX - startX;
+          if (Math.abs(dx) > 60) {
+            navigatePlay(dx < 0 ? 1 : -1);
+          }
+        }
+      }, { passive: true });
+    }
+
+    /* ==========================================================
+       FIELD RENDERING: COLORED ROUTES & REALISTIC FOOTBALL
+       ========================================================== */
+    function getPointOnPolyline(path, t) {
+      if (!path || path.length === 0) return { x: 0, y: 0 };
+      if (path.length === 1 || t <= 0) return { x: path[0].x, y: path[0].y };
+      if (t >= 1) return { x: path[path.length - 1].x, y: path[path.length - 1].y };
+
+      let totalLen = 0;
+      const lens = [];
+      for (let i = 0; i < path.length - 1; i++) {
+        const d = Math.hypot(path[i+1].x - path[i].x, path[i+1].y - path[i].y);
+        lens.push(d);
+        totalLen += d;
+      }
+      if (totalLen === 0) return { x: path[0].x, y: path[0].y };
+
+      const target = t * totalLen;
+      let walk = 0;
+      for (let i = 0; i < lens.length; i++) {
+        if (walk + lens[i] >= target) {
+          const frac = (target - walk) / lens[i];
+          return {
+            x: path[i].x + (path[i+1].x - path[i].x) * frac,
+            y: path[i].y + (path[i+1].y - path[i].y) * frac
+          };
+        }
+        walk += lens[i];
+      }
+      return { x: path[path.length - 1].x, y: path[path.length - 1].y };
+    }
+
+    function getRouteColor(p) {
+      if (p.isPrimary) return "#dc2626"; // Preferred / 1st Target Route: Vivid Red
+      if (p.color) return p.color;
+      return "#2563eb"; // Standard secondary route: Blue
+    }
+
+    function getRouteMarker(p) {
+      if (p.isPrimary) return "arrow-primary";
+      const c = getRouteColor(p);
+      if (c === "#059669") return "arrow-green";
+      if (c === "#7c3aed") return "arrow-purple";
+      return "arrow-blue";
+    }
+
+    function renderField() {
+      if (!activePlay) return;
+
+      // 1. Static Routes (Color-coded, Preferred route in Bold Red)
+      const routesG = document.getElementById('layer-routes');
+      let svgRoutes = '';
+      activePlay.players.forEach(p => {
+        if (p.isPasser && !p.isPrimary) return;
+
+        const pts = p.path.map(pt => `${pt.x},${pt.y}`).join(' ');
+        const isPrimary = p.isPrimary;
+        const strokeColor = getRouteColor(p);
+        const markerId = getRouteMarker(p);
+        const strokeW = isPrimary ? 3.5 : 2.5;
+        const dash = isPrimary ? 'none' : '7,4'; // Preferred route is solid bold line!
+
+        svgRoutes += `
+          <g>
+            <polyline points="${pts}" fill="none" stroke="${strokeColor}" stroke-width="${strokeW}" stroke-dasharray="${dash}" marker-end="url(#${markerId})"/>
+            ${p.path.slice(1, -1).map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="3.5" fill="${strokeColor}"/>`).join('')}
+          </g>
+        `;
+      });
+      routesG.innerHTML = svgRoutes;
+
+      renderDefenseLayer();
+      updateAnimStep(animProgress);
+    }
+
+    function renderDefenseLayer() {
+      const defG = document.getElementById('layer-defense');
+      if (!showDefense || !activePlay || !activePlay.defense) {
+        defG.innerHTML = '';
+        return;
+      }
+
+      let html = '';
+      activePlay.defense.players.forEach(dp => {
+        const isRush = dp.id.includes('RUSH') || dp.id.includes('BLITZ');
+        let rushLine = '';
+        if (isRush) {
+          rushLine = `<line x1="${dp.x}" y1="${dp.y}" x2="500" y2="490" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="4,4"/>`;
+        }
+        html += `
+          <g>
+            ${rushLine}
+            <circle cx="${dp.x}" cy="${dp.y}" r="15" fill="#fff1f2" stroke="#e11d48" stroke-width="1.8"/>
+            <text x="${dp.x}" y="${dp.y + 4}" fill="#be123c" font-size="9" font-weight="800" text-anchor="middle">${dp.label}</text>
+          </g>
+        `;
+      });
+      defG.innerHTML = html;
+    }
+
+    function renderFootballSvg(x, y, rot) {
+      return `
+        <g transform="translate(${x}, ${y}) rotate(${rot}) scale(1.15)">
+          <!-- Leather Brown Football with dark edge -->
+          <ellipse cx="0" cy="0" rx="10" ry="6" fill="#854d0e" stroke="#451a03" stroke-width="1.2"/>
+          <!-- White Grip End Stripes -->
+          <line x1="-6.5" y1="-4.2" x2="-6.5" y2="4.2" stroke="#ffffff" stroke-width="1.2" opacity="0.9"/>
+          <line x1="6.5" y1="-4.2" x2="6.5" y2="4.2" stroke="#ffffff" stroke-width="1.2" opacity="0.9"/>
+          <!-- White Laces -->
+          <line x1="-3.5" y1="0" x2="3.5" y2="0" stroke="#ffffff" stroke-width="1.3"/>
+          <line x1="-2" y1="-2" x2="-2" y2="2" stroke="#ffffff" stroke-width="1.1"/>
+          <line x1="0" y1="-2" x2="0" y2="2" stroke="#ffffff" stroke-width="1.1"/>
+          <line x1="2" y1="-2" x2="2" y2="2" stroke="#ffffff" stroke-width="1.1"/>
+        </g>
+      `;
+    }
+
+    function updateAnimStep(progress) {
+      if (!activePlay) return;
+
+      const playersG = document.getElementById('layer-players');
+      const passG = document.getElementById('layer-pass');
+      const ballG = document.getElementById('layer-ball');
+
+      let htmlPlayers = '';
+      const positions = {};
+
+      activePlay.players.forEach(p => {
+        const pt = getPointOnPolyline(p.path, progress);
+        positions[p.id] = pt;
+
+        const isQB = p.id === 'QB';
+        const isPrimary = p.isPrimary;
+        const color = getRouteColor(p);
+
+        // Player Circle Badges
+        const fill = isQB ? '#1e293b' : '#ffffff';
+        const stroke = isPrimary ? '#dc2626' : (isQB ? '#1e293b' : color);
+        const textFill = isQB ? '#ffffff' : (isPrimary ? '#dc2626' : '#111111');
+        const strokeW = isPrimary ? 3.5 : 2.2;
+
+        htmlPlayers += `
+          <g transform="translate(${pt.x}, ${pt.y})">
+            ${isPrimary ? `<circle cx="0" cy="0" r="19" fill="none" stroke="#fecaca" stroke-width="3"/>` : ''}
+            <circle cx="0" cy="0" r="15" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>
+            <text x="0" y="4" fill="${textFill}" font-size="10" font-weight="900" text-anchor="middle">${p.label}</text>
+          </g>
+        `;
+      });
+      playersG.innerHTML = htmlPlayers;
+
+      // Pass Trajectory & Colored Football
+      let passHtml = '';
+      let ballHtml = '';
+
+      if (activePlay.passTiming) {
+        const rel = activePlay.passTiming.release;
+        const tgt = activePlay.passTiming.targetPlayer;
+        const qbPt = positions['QB'] || { x: 500, y: 490 };
+        const tgtPt = positions[tgt] || { x: 500, y: 250 };
+
+        if (progress < rel) {
+          ballHtml = renderFootballSvg(qbPt.x + 10, qbPt.y - 3, 0);
+        } else {
+          const t = Math.min(1.0, (progress - rel) / (1.0 - rel));
+          const bx = qbPt.x + (tgtPt.x - qbPt.x) * t;
+          const by = qbPt.y + (tgtPt.y - qbPt.y) * t;
+          const arc = Math.sin(t * Math.PI) * 22;
+          const rot = t * 720; // 360 spiral rotation
+
+          passHtml = `<line x1="${qbPt.x}" y1="${qbPt.y}" x2="${tgtPt.x}" y2="${tgtPt.y}" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4,4" opacity="0.6"/>`;
+          ballHtml = renderFootballSvg(bx, by - arc, rot);
+        }
+      }
+
+      passG.innerHTML = passHtml;
+      ballG.innerHTML = ballHtml;
+    }
+
+    /* ==========================================================
+       SIMPLE PLAY ANIMATION (NO SCROLL BARS)
+       ========================================================== */
+    function toggleAnimation() {
+      if (isPlaying) {
+        pauseAnimation();
+      } else {
+        startAnimation();
+      }
+    }
+
+    function startAnimation() {
+      if (animProgress >= 1.0) animProgress = 0.0;
+      isPlaying = true;
+      lastAnimTime = performance.now();
+      document.getElementById('btn-anim-play').textContent = '❚❚ Pause';
+      animFrameReq = requestAnimationFrame(animTick);
+    }
+
+    function pauseAnimation() {
+      isPlaying = false;
+      document.getElementById('btn-anim-play').textContent = '▶ Play';
+      if (animFrameReq) {
+        cancelAnimationFrame(animFrameReq);
+        animFrameReq = null;
+      }
+    }
+
+    function resetAnimation() {
+      pauseAnimation();
+      animProgress = 0.0;
+      updateAnimStep(0.0);
+    }
+
+    function animTick(timestamp) {
+      if (!isPlaying) return;
+      const delta = (timestamp - lastAnimTime) / 1000;
+      lastAnimTime = timestamp;
+
+      animProgress += (delta / animTotalDuration);
+      if (animProgress >= 1.0) {
+        animProgress = 1.0;
+        updateAnimStep(animProgress);
+        pauseAnimation();
+        return;
+      }
+
+      updateAnimStep(animProgress);
+      animFrameReq = requestAnimationFrame(animTick);
+    }
+
+    /* ==========================================================
+       CREATE OWN PLAYBOOK (SIMPLE CLEAN MODAL WITH COLORS)
+       ========================================================== */
+    function openCreator() {
+      closeDrawer();
+      document.getElementById('creator-modal').classList.add('open');
+
+      creatorPlay = {
+        id: `custom-${Date.now()}`,
+        name: "Play " + (currentPlays.length + 1),
+        format: "5v5",
+        type: "pass",
+        defenseTarget: "man",
+        defenseName: "Man-to-Man",
+        players: getDefaultPlayers("5v5"),
+        passTiming: { release: 0.70, targetPlayer: "X" }
+      };
+
+      document.getElementById('c-name').value = creatorPlay.name;
+      document.getElementById('c-fmt').value = creatorPlay.format;
+      document.getElementById('c-type').value = creatorPlay.type;
+      document.getElementById('c-def').value = creatorPlay.defenseTarget;
+
+      renderCreatorPlayersList();
+      selectCreatorPlayer(creatorPlay.players[2].id);
+      renderCreatorSvg();
+    }
+
+    function getDefaultPlayers(fmt) {
+      if (fmt === '4v4') {
+        return [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:490, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:370}], color: "#059669" },
+          { id: "X", label: "X", x: 240, y: 430, path: [{x:240, y:430}, {x:240, y:360}, {x:400, y:340}], isPrimary: true, color: "#dc2626" },
+          { id: "Z", label: "Z", x: 760, y: 430, path: [{x:760, y:430}, {x:760, y:280}], color: "#2563eb" }
+        ];
+      } else {
+        return [
+          { id: "QB", label: "QB", x: 500, y: 490, path: [{x:500, y:490}, {x:485, y:495}], isPasser: true },
+          { id: "C", label: "C", x: 500, y: 430, path: [{x:500, y:430}, {x:500, y:370}], color: "#059669" },
+          { id: "X", label: "X", x: 200, y: 430, path: [{x:200, y:430}, {x:230, y:370}, {x:460, y:350}], isPrimary: true, color: "#dc2626" },
+          { id: "Z", label: "Z", x: 800, y: 430, path: [{x:800, y:430}, {x:800, y:280}], color: "#2563eb" },
+          { id: "H", label: "H", x: 650, y: 430, path: [{x:650, y:430}, {x:650, y:380}, {x:820, y:360}], color: "#7c3aed" }
+        ];
+      }
+    }
+
+    function handleCreatorFormat(fmt) {
+      if (!creatorPlay) return;
+      creatorPlay.format = fmt;
+      creatorPlay.players = getDefaultPlayers(fmt);
+      renderCreatorPlayersList();
+      selectCreatorPlayer(creatorPlay.players[2].id);
+      renderCreatorSvg();
+    }
+
+    function renderCreatorPlayersList() {
+      const box = document.getElementById('c-players-box');
+      if (!creatorPlay) return;
+
+      box.innerHTML = creatorPlay.players.map(p => `
+        <button class="c-p-btn ${creatorSelectedPlayer && creatorSelectedPlayer.id === p.id ? 'active' : ''}" onclick="selectCreatorPlayer('${p.id}')">
+          ${p.label} ${p.isPrimary ? '★' : ''}
+        </button>
+      `).join('');
+    }
+
+    function selectCreatorPlayer(id) {
+      creatorSelectedPlayer = creatorPlay.players.find(p => p.id === id);
+      renderCreatorPlayersList();
+      if (creatorSelectedPlayer) {
+        document.getElementById('c-is-primary').value = creatorSelectedPlayer.isPrimary ? 'yes' : 'no';
+      }
+      renderCreatorSvg();
+    }
+
+    function handleCreatorPrimaryToggle(val) {
+      if (!creatorSelectedPlayer) return;
+      const isPri = val === 'yes';
+      if (isPri) {
+        creatorPlay.players.forEach(pl => { pl.isPrimary = false; });
+        creatorSelectedPlayer.isPrimary = true;
+        creatorSelectedPlayer.color = "#dc2626";
+        creatorPlay.passTiming.targetPlayer = creatorSelectedPlayer.id;
+      } else {
+        creatorSelectedPlayer.isPrimary = false;
+        creatorSelectedPlayer.color = "#2563eb";
+      }
+      renderCreatorPlayersList();
+      renderCreatorSvg();
+    }
+
+    function applyRoute(type) {
+      if (!creatorSelectedPlayer) return;
+      const p = creatorSelectedPlayer;
+      const sx = p.x;
+      const sy = p.y;
+      const isRight = sx > 500;
+      let path = [{ x: sx, y: sy }];
+
+      switch (type) {
+        case 'slant':
+          path.push({ x: sx, y: sy - 40 });
+          path.push({ x: isRight ? sx - 240 : sx + 240, y: sy - 90 });
+          break;
+        case 'out':
+          path.push({ x: sx, y: sy - 70 });
+          path.push({ x: isRight ? sx + 90 : sx - 90, y: sy - 70 });
+          break;
+        case 'in':
+          path.push({ x: sx, y: sy - 110 });
+          path.push({ x: 500, y: sy - 110 });
+          break;
+        case 'post':
+          path.push({ x: sx, y: sy - 120 });
+          path.push({ x: 500, y: sy - 240 });
+          break;
+        case 'corner':
+          path.push({ x: sx, y: sy - 120 });
+          path.push({ x: isRight ? sx + 100 : sx - 100, y: sy - 240 });
+          break;
+        case 'fly':
+          path.push({ x: sx, y: 120 });
+          break;
+        case 'hitch':
+          path.push({ x: sx, y: sy - 70 });
+          path.push({ x: sx, y: sy - 60 });
+          break;
+        case 'drag':
+          path.push({ x: sx, y: sy - 40 });
+          path.push({ x: isRight ? 180 : 820, y: sy - 40 });
+          break;
+        case 'wheel':
+          path.push({ x: isRight ? sx + 70 : sx - 70, y: sy - 30 });
+          path.push({ x: isRight ? sx + 80 : sx - 80, y: 140 });
+          break;
+        case 'flat':
+          path.push({ x: isRight ? sx + 130 : sx - 130, y: sy - 25 });
+          break;
+        case 'delay':
+          path.push({ x: sx, y: sy - 10 });
+          path.push({ x: sx, y: sy - 70 });
+          break;
+        case 'screen':
+          path.push({ x: sx + 15, y: sy + 15 });
+          path.push({ x: sx - 25, y: sy + 10 });
+          break;
+      }
+
+      p.path = path;
+      renderCreatorSvg();
+    }
+
+    function handleCreatorClick(evt) {
+      if (!creatorSelectedPlayer) return;
+      const svg = document.getElementById('creator-svg');
+      const pt = svg.createSVGPoint();
+      pt.x = evt.clientX;
+      pt.y = evt.clientY;
+      const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+
+      creatorSelectedPlayer.path.push({
+        x: Math.round(svgP.x),
+        y: Math.round(svgP.y)
+      });
+      renderCreatorSvg();
+    }
+
+    function renderCreatorSvg() {
+      const svg = document.getElementById('creator-svg');
+      if (!creatorPlay) return;
+
+      let html = `
+        <rect x="0" y="0" width="1000" height="560" fill="#ffffff" stroke="#222222" stroke-width="2"/>
+        <line x1="40" y1="430" x2="960" y2="430" stroke="#2563eb" stroke-width="3"/>
+        <line x1="40" y1="360" x2="960" y2="360" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,4"/>
+        <line x1="40" y1="260" x2="960" y2="260" stroke="#d97706" stroke-width="2.5"/>
+        <line x1="40" y1="90" x2="960" y2="90" stroke="#111111" stroke-width="3"/>
+        <text x="500" y="60" fill="#cccccc" font-size="20" font-weight="800" text-anchor="middle">END ZONE</text>
+      `;
+
+      creatorPlay.players.forEach(p => {
+        const isSel = creatorSelectedPlayer && creatorSelectedPlayer.id === p.id;
+        const color = p.isPrimary ? "#dc2626" : (p.color || "#2563eb");
+        const pts = p.path.map(pt => `${pt.x},${pt.y}`).join(' ');
+        html += `
+          <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${p.isPrimary ? 3.5 : 2.5}" stroke-dasharray="${p.isPrimary ? 'none' : '6,4'}"/>
+          ${p.path.map(pt => `<circle cx="${pt.x}" cy="${pt.y}" r="3.5" fill="${color}"/>`).join('')}
+        `;
+      });
+
+      creatorPlay.players.forEach(p => {
+        const isSel = creatorSelectedPlayer && creatorSelectedPlayer.id === p.id;
+        const color = p.isPrimary ? "#dc2626" : (p.color || "#2563eb");
+        html += `
+          <g transform="translate(${p.x}, ${p.y})">
+            ${p.isPrimary ? `<circle cx="0" cy="0" r="19" fill="none" stroke="#fecaca" stroke-width="3"/>` : ''}
+            <circle cx="0" cy="0" r="15" fill="${isSel ? color : '#ffffff'}" stroke="${color}" stroke-width="${isSel ? 3.5 : 2.2}"/>
+            <text x="0" y="4" fill="${isSel ? '#ffffff' : color}" font-size="10" font-weight="900" text-anchor="middle">${p.label}</text>
+          </g>
+        `;
+      });
+
+      svg.innerHTML = html;
+    }
+
+    function saveCustomPlay() {
+      if (!creatorPlay) return;
+
+      const name = document.getElementById('c-name').value.trim();
+      if (!name) return;
+
+      creatorPlay.name = name;
+      creatorPlay.format = document.getElementById('c-fmt').value;
+      creatorPlay.type = document.getElementById('c-type').value;
+      creatorPlay.defenseTarget = document.getElementById('c-def').value;
+      const defNames = {
+        man: 'Man-to-Man',
+        cover2: 'Cover 2',
+        cover3: 'Cover 3',
+        cover1: 'Cover 1',
+        blitz: 'Blitz / Rush'
+      };
+      creatorPlay.defenseName = defNames[creatorPlay.defenseTarget] || 'Defense';
+
+      currentPlays.push(creatorPlay);
+      saveCustomToStorage();
+      closeCreator();
+      renderDrawerList();
+      selectPlay(creatorPlay.id);
+      showToast('Play saved!');
+    }
+
+    function closeCreator() {
+      document.getElementById('creator-modal').classList.remove('open');
+      creatorPlay = null;
+      creatorSelectedPlayer = null;
+    }
+
+    /* JSON EXPORT / IMPORT */
+    function exportPlaybook() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentPlays, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `flag_qb_playbook.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Exported!');
+    }
+
+    function importPlaybook(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const list = JSON.parse(e.target.result);
+          if (Array.isArray(list)) {
+            currentPlays = list;
+            saveCustomToStorage();
+            renderDrawerList();
+            selectPlay(currentPlays[0].id);
+            showToast('Playbook imported!');
+          }
+        } catch (err) {}
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
