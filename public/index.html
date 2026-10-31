@@ -152,11 +152,47 @@ td,th{border-bottom:1px solid rgba(31,45,110,.08)}
 
 <div class="modal" id="modal"><div class="box">
 <h2 style="margin-top:0">Daftar Soedirman Bowl</h2>
-<label>Nama<input type="text" id="nm" maxlength="40" placeholder="Nama lengkap / panggilan"></label>
-<label>Posisi/pengalaman<select id="tier"><option>Receiver</option><option>QB</option><option>Defender</option><option>Pemula / belum tahu</option></select></label>
-<label class="ck"><input type="checkbox" id="ok"><span>Saya berkomitmen mengikuti seluruh proses hingga Game Day: voting kapten, draft, dan hari pertandingan.</span></label>
+
+<div style="margin-bottom:14px">
+<div style="font-weight:600;font-size:13px;margin-bottom:6px">Apakah sudah pernah mendaftar sebelumnya?</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<button type="button" class="btn" id="regModeOld" style="padding:9px 8px;font-size:13px">Sudah Pernah</button>
+<button type="button" class="btn o" id="regModeNew" style="padding:9px 8px;font-size:13px">Pemain Baru</button>
+</div>
+</div>
+
+<div id="wrapRegOld">
+<label>Pilih Nama Pemain (Database / Stats)
+<select id="selExisting"></select>
+</label>
+<div id="hintExisting" class="note" style="margin-top:-6px;margin-bottom:12px;font-size:12px"></div>
+<label>Posisi/pengalaman
+<select id="tierOld">
+<option>Receiver</option>
+<option>QB</option>
+<option>Defender</option>
+<option>Pemula / belum tahu</option>
+</select>
+</label>
+</div>
+
+<div id="wrapRegNew" style="display:none">
+<label>Nama Baru
+<input type="text" id="nm" maxlength="40" placeholder="Nama lengkap / panggilan">
+</label>
+<label>Posisi/pengalaman
+<select id="tier">
+<option>Receiver</option>
+<option>QB</option>
+<option>Defender</option>
+<option>Pemula / belum tahu</option>
+</select>
+</label>
+</div>
+
+<label class="ck" style="margin-top:12px"><input type="checkbox" id="ok"><span>Saya berkomitmen mengikuti seluruh proses hingga Game Day: voting kapten, draft, dan hari pertandingan.</span></label>
 <div id="err" class="g note" style="min-height:18px"></div>
-<div style="display:flex;gap:8px"><button class="btn" id="send">Kirim</button><button class="btn o" id="cancel">Batal</button></div>
+<div style="display:flex;gap:8px"><button class="btn" id="send">Masuk ke Pool</button><button class="btn o" id="cancel">Batal</button></div>
 </div></div>
 
 <script>
@@ -196,13 +232,76 @@ $("reset").onclick=()=>{if(!admin)return;if(confirm("Reset draft?")){st={capA:""
 $("pool").onclick=e=>{const n=e.target.closest(".pk");if(!n)return;const t=nextTeam();if(!t)return;if(!admin&&cap!==t){$("capMsg").textContent=cap?"Bukan giliran timmu.":"Hanya kapten (atau admin) yang bisa memilih. Klik 'Are you the captain?'.";return}
  st={...st,picks:[...st.picks,{n:n.dataset.n,t}]};save().then(()=>{if(st.picks.length>=8)clearPool()})};
 
-$("openReg").onclick=()=>{if((!regOpen()&&!admin)||players.length>=14)return;$("err").textContent="";$("modal").classList.add("show");$("nm").focus()};
+let regMode="old";
+function getExistingPlayers(){
+ const map=new Map();
+ (S||[]).forEach(s=>{if(s&&s.name&&s.name.trim()){const k=s.name.trim().toLowerCase();if(!map.has(k))map.set(k,s.name.trim())}});
+ (M||[]).forEach(m=>{
+  (m.ra||[]).forEach(n=>{if(n&&n.trim()){const k=n.trim().toLowerCase();if(!map.has(k))map.set(k,n.trim())}});
+  (m.rb||[]).forEach(n=>{if(n&&n.trim()){const k=n.trim().toLowerCase();if(!map.has(k))map.set(k,n.trim())}});
+  if(m.ps)Object.values(m.ps).forEach(p=>{if(p&&p.n&&p.n.trim()){const k=p.n.trim().toLowerCase();if(!map.has(k))map.set(k,p.n.trim())}});
+ });
+ const current=new Set((players||[]).map(p=>(p.name||"").trim().toLowerCase()));
+ const list=[];
+ for(const [k,n] of map.entries()){if(!current.has(k))list.push(n)}
+ return list.sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
+}
+function setRegMode(mode){
+ regMode=mode;
+ if(mode==="old"){
+  $("regModeOld").className="btn";$("regModeNew").className="btn o";
+  $("wrapRegOld").style.display="block";$("wrapRegNew").style.display="none";
+ }else{
+  $("regModeOld").className="btn o";$("regModeNew").className="btn";
+  $("wrapRegOld").style.display="none";$("wrapRegNew").style.display="block";
+  $("nm").focus();
+ }
+ $("err").textContent="";
+}
+function updateExistingPlayerOptions(){
+ const list=getExistingPlayers();
+ const sel=$("selExisting");
+ if(!list.length){
+  sel.innerHTML='<option value="">-- Tidak ada pemain lama yang tersedia --</option>';
+  sel.disabled=true;
+  $("hintExisting").textContent="Semua pemain di database sudah masuk ke pool saat ini.";
+  return false;
+ }else{
+  sel.disabled=false;
+  sel.innerHTML='<option value="">-- Pilih Nama Kamu --</option>'+list.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join("");
+  $("hintExisting").textContent="Tersedia "+list.length+" pemain lama dari database/stats.";
+  return true;
+ }
+}
+$("regModeOld").onclick=()=>{updateExistingPlayerOptions();setRegMode("old")};
+$("regModeNew").onclick=()=>setRegMode("new");
+
+$("openReg").onclick=()=>{
+ if((!regOpen()&&!admin)||players.length>=14)return;
+ $("err").textContent="";
+ $("ok").checked=false;
+ $("nm").value="";
+ const hasOld=updateExistingPlayerOptions();
+ setRegMode(hasOld?"old":"new");
+ $("modal").classList.add("show");
+};
 $("cancel").onclick=()=>$("modal").classList.remove("show");
-$("send").onclick=async()=>{const name=$("nm").value.trim();if(!regOpen()&&!admin)return $("err").textContent="Registrasi sedang ditutup.";if(players.length>=14)return $("err").textContent="Pool penuh (maks. 14 peserta).";
- if(!name)return $("err").textContent="Nama wajib diisi.";
+$("send").onclick=async()=>{
+ if(!regOpen()&&!admin)return $("err").textContent="Registrasi sedang ditutup.";
+ if(players.length>=14)return $("err").textContent="Pool penuh (maks. 14 peserta).";
+ let name="",tier="Receiver";
+ if(regMode==="old"){
+  name=($("selExisting").value||"").trim();
+  if(!name)return $("err").textContent="Silakan pilih nama kamu dari daftar pemain lama.";
+  tier=$("tierOld").value;
+ }else{
+  name=$("nm").value.trim();
+  if(!name)return $("err").textContent="Nama wajib diisi.";
+  tier=$("tier").value;
+ }
  if(!$("ok").checked)return $("err").textContent="Centang komitmen dulu untuk mendaftar.";
  if(players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return $("err").textContent="Nama ini sudah terdaftar.";
- const rec={name,tier:$("tier").value,ts:Date.now()};
+ const rec={name,tier,ts:Date.now()};
  if(db){try{await db.collection("players").add(rec)}catch(e){return $("err").textContent="Gagal menyimpan. Pastikan kamu sudah masuk (sign in) lalu coba lagi."}}
  else{players=[...players,rec];render()}
  if(!S.some(x=>x.id===slug(name)))await put("stats",slug(name),{cp:0,ct:0,td:0,fp:0,bw:0,it:0,name});
