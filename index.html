@@ -211,7 +211,7 @@ const ORDER=["A","B","B","A","A","B","B","A"];
 function nextTeam(){if(!st.started||st.picks.length>=8)return null;const f=st.first||"A";const t=ORDER[st.picks.length];return f==="A"?t:(t==="A"?"B":"A")}
 function pool(){const used=new Set([st.capA,st.capB,...st.picks.map(p=>p.n)]);return players.filter(p=>!used.has(p.name))}
 function render(){
- $("regCount").textContent=players.length?players.length+" / 14 peserta terdaftar"+(players.length>=14?" · Pool penuh":""):"Pendaftaran terbuka (maks. 14 peserta). Jadilah yang pertama!";
+ $("regCount").textContent=players.length?players.length+" peserta terdaftar":"Pendaftaran terbuka. Jadilah yang pertama!";
  $("poolHome").innerHTML=players.length?players.map(p=>'<span class="pill">'+esc(p.name)+' <span class="mu">· '+esc(p.tier)+'</span></span>').join(""):"Belum ada yang mendaftar.";
  const opts='<option value="">— pilih dari pool —</option>'+players.map(p=>'<option>'+esc(p.name)+'</option>').join("");
  for(const [id,v] of [["capA",st.capA],["capB",st.capB]]){const el=$(id);if(document.activeElement!==el){el.innerHTML=opts;el.value=v||""}el.disabled=st.started}
@@ -277,7 +277,7 @@ $("regModeOld").onclick=()=>{updateExistingPlayerOptions();setRegMode("old")};
 $("regModeNew").onclick=()=>setRegMode("new");
 
 $("openReg").onclick=()=>{
- if((!regOpen()&&!admin)||players.length>=14)return;
+ if(!regOpen()&&!admin)return;
  $("err").textContent="";
  $("ok").checked=false;
  $("nm").value="";
@@ -288,7 +288,6 @@ $("openReg").onclick=()=>{
 $("cancel").onclick=()=>$("modal").classList.remove("show");
 $("send").onclick=async()=>{
  if(!regOpen()&&!admin)return $("err").textContent="Registrasi sedang ditutup.";
- if(players.length>=14)return $("err").textContent="Pool penuh (maks. 14 peserta).";
  let name="",tier="Receiver";
  if(regMode==="old"){
   name=($("selExisting").value||"").trim();
@@ -398,9 +397,9 @@ let cyc={open:false,startedAt:0,closeAt:0,format:"bo3"};
 function regOpen(){return !!cyc.open&&Date.now()<cyc.closeAt}
 const dt=ms=>new Date(ms).toLocaleString("id-ID",{timeZone:"Asia/Jakarta",weekday:"long",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}).replace(/(\d)\.(\d{2})/,"$1:$2")+" WIB";
 const fmt=x=>(x>=1440?Math.floor(x/1440)+" hari ":"")+(Math.floor(x%1440/60)?Math.floor(x%1440/60)+" jam ":"")+(x%60)+" mnt";
-function rReg(){const o=regOpen(),w=wk(),b=$("openReg"),full=players.length>=14,ok=(o||admin)&&!full;
+function rReg(){const o=regOpen(),w=wk(),b=$("openReg"),ok=o||admin;
  b.disabled=!ok;b.style.opacity=ok?"1":".5";b.style.cursor=ok?"pointer":"not-allowed";
- b.textContent=full?"Pool Penuh (14/14)":o?"Daftar":admin?"Daftar (admin)":"Registrasi Ditutup";
+ b.textContent=o?"Daftar":admin?"Daftar (admin)":"Registrasi Ditutup";
  const fText=(cyc.format==="single"?"Single Match":"Best of 3");
  $("regStat").textContent=o?("Registrasi dibuka ("+fText+") · ditutup otomatis "+dt(cyc.closeAt)+" (sisa "+fmt(Math.max(0,Math.floor((cyc.closeAt-Date.now())/60000)))+")"):(cyc.open&&cyc.closeAt?("Registrasi ditutup ("+fText+") · berakhir "+dt(cyc.closeAt)):("Registrasi ditutup · format: "+fText+" · menunggu admin memulai pendaftaran"));
  $("regAdm").textContent=$("regStat").textContent}
@@ -460,20 +459,17 @@ function rNo(){const e=document.querySelector(".no");if(!e)return;const n=M.filt
 function rTl(){
  const p1=$("tlP1"),d1=$("tlD1"),p2=$("tlP2"),d2=$("tlD2"),p3=$("tlP3"),d3=$("tlD3"),p4=$("tlP4"),d4=$("tlD4");
  if(!p1)return;
- const o=regOpen(),now=Date.now(),full=players.length>=14;
+ const o=regOpen(),now=Date.now();
  // Tahap 1
  if(o){
    p1.textContent="● Sedang Dibuka";p1.style.color="var(--com)";p1.style.borderColor="var(--com)";
-   d1.textContent="Pendaftaran aktif: "+players.length+"/14 peserta terdaftar · sisa "+fmt(Math.max(0,Math.floor((cyc.closeAt-now)/60000)))+" (ditutup "+dt(cyc.closeAt)+").";
- }else if(full){
-   p1.textContent="✓ Kuota Penuh (14/14)";p1.style.color="var(--gen)";p1.style.borderColor="var(--gen)";
-   d1.textContent="Kuota maksimal 14 pemain telah terpenuhi. Menunggu sesi pemilihan tim.";
+   d1.textContent="Pendaftaran aktif: "+players.length+" peserta terdaftar · sisa "+fmt(Math.max(0,Math.floor((cyc.closeAt-now)/60000)))+" (ditutup "+dt(cyc.closeAt)+").";
  }else if(cyc.closeAt&&now>=cyc.closeAt){
    p1.textContent="✓ Ditutup";p1.style.color="var(--mu)";p1.style.borderColor="var(--bd)";
    d1.textContent="Pendaftaran selesai ("+players.length+" peserta terdaftar). Menunggu sesi pemilihan tim.";
  }else{
    p1.textContent="Menunggu Dibuka";p1.style.color="var(--mu)";p1.style.borderColor="var(--bd)";
-   d1.textContent="Pendaftaran peserta dibuka oleh admin (kuota maks. 14 pemain).";
+   d1.textContent="Pendaftaran peserta dibuka oleh admin.";
  }
  // Tahap 2
  if(st.capA&&st.capB){

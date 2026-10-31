@@ -235,10 +235,6 @@ export async function onRequest(context) {
       return err("Pendaftaran saat ini sedang ditutup.");
     }
 
-    if (state.players.length >= 14) {
-      return err("Pool pemain sudah penuh (maks. 14 peserta).");
-    }
-
     const duplicate = state.players.some((p) => p.name.toLowerCase() === name.toLowerCase());
     if (duplicate) {
       return err("Nama ini sudah terdaftar di pool.");
