@@ -25,7 +25,7 @@ function err(message, status = 400) {
 // In-memory fallback if D1 is not yet provisioned
 const memoryStore = {
   version: 1,
-  cycle: { open: false, startedAt: 0, closeAt: 0 },
+  cycle: { open: false, startedAt: 0, closeAt: 0, format: "bo3", bestOf3: true },
   draftCodes: { A: "", B: "" },
   draftState: { capA: "", capB: "", first: "", started: false, picks: [] },
   players: [],
@@ -39,13 +39,16 @@ async function ensureTables(db) {
     await db.batch([
       db.prepare(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL);`),
       db.prepare(`CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE COLLATE NOCASE, tier TEXT NOT NULL, ts INTEGER NOT NULL);`),
-      db.prepare(`CREATE TABLE IF NOT EXISTS matches (id TEXT PRIMARY KEY, date TEXT, title TEXT, status TEXT DEFAULT 'scheduled', note TEXT DEFAULT '', ts INTEGER NOT NULL, ra TEXT DEFAULT '[]', rb TEXT DEFAULT '[]', ev TEXT DEFAULT '[]', fin TEXT DEFAULT '[]', ps TEXT DEFAULT '{}');`),
+      db.prepare(`CREATE TABLE IF NOT EXISTS matches (id TEXT PRIMARY KEY, date TEXT, title TEXT, status TEXT DEFAULT 'scheduled', note TEXT DEFAULT '', format TEXT DEFAULT 'bo3', ts INTEGER NOT NULL, ra TEXT DEFAULT '[]', rb TEXT DEFAULT '[]', ev TEXT DEFAULT '[]', fin TEXT DEFAULT '[]', ps TEXT DEFAULT '{}');`),
       db.prepare(`CREATE TABLE IF NOT EXISTS stats (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE COLLATE NOCASE, cp INTEGER DEFAULT 0, ct INTEGER DEFAULT 0, td INTEGER DEFAULT 0, fp INTEGER DEFAULT 0, bw INTEGER DEFAULT 0, it INTEGER DEFAULT 0, updated_at INTEGER NOT NULL);`),
-      db.prepare(`INSERT OR IGNORE INTO meta (key, value, updated_at) VALUES ('cycle', '{"open":false,"startedAt":0,"closeAt":0}', ?);`).bind(Date.now()),
+      db.prepare(`INSERT OR IGNORE INTO meta (key, value, updated_at) VALUES ('cycle', '{"open":false,"startedAt":0,"closeAt":0,"format":"bo3","bestOf3":true}', ?);`).bind(Date.now()),
       db.prepare(`INSERT OR IGNORE INTO meta (key, value, updated_at) VALUES ('draft_codes', '{"A":"","B":""}', ?);`).bind(Date.now()),
       db.prepare(`INSERT OR IGNORE INTO meta (key, value, updated_at) VALUES ('draft_state', '{"capA":"","capB":"","first":"","started":false,"picks":[]}', ?);`).bind(Date.now()),
       db.prepare(`INSERT OR IGNORE INTO meta (key, value, updated_at) VALUES ('version', '1', ?);`).bind(Date.now()),
     ]);
+    try {
+      await db.prepare("ALTER TABLE matches ADD COLUMN format TEXT DEFAULT 'bo3';").run();
+    } catch (_) {}
   } catch (e) {
     console.error("ensureTables error:", e);
   }
@@ -81,7 +84,7 @@ async function getFullState(db) {
   const [metaRows, playerRows, matchRows, statRows] = await Promise.all([
     db.prepare(`SELECT key, value FROM meta`).all(),
     db.prepare(`SELECT id, name, tier, ts FROM players ORDER BY ts ASC`).all(),
-    db.prepare(`SELECT id, date, title, status, note, ts, ra, rb, ev, fin, ps FROM matches ORDER BY ts DESC`).all(),
+    db.prepare(`SELECT id, date, title, status, note, format, ts, ra, rb, ev, fin, ps FROM matches ORDER BY ts DESC`).all(),
     db.prepare(`SELECT id, name, cp, ct, td, fp, bw, it FROM stats`).all(),
   ]);
 
@@ -100,6 +103,7 @@ async function getFullState(db) {
     title: m.title || "",
     status: m.status || "scheduled",
     note: m.note || "",
+    format: m.format || "bo3",
     ts: m.ts || 0,
     ra: m.ra ? JSON.parse(m.ra) : [],
     rb: m.rb ? JSON.parse(m.rb) : [],
@@ -305,6 +309,8 @@ export default {
           open: !!body.open,
           startedAt: Number(body.startedAt) || 0,
           closeAt: Number(body.closeAt) || 0,
+          format: body.format === "single" ? "single" : "bo3",
+          bestOf3: body.format !== "single" && body.bestOf3 !== false,
         };
         const val = JSON.stringify(cycle);
 
@@ -369,6 +375,7 @@ export default {
         const title = (body.title || "").trim() || "Match";
         const status = body.status || "scheduled";
         const note = (body.note || "").trim();
+        const format = body.format === "single" ? "single" : "bo3";
         const ts = body.ts || Date.now();
         const ra = JSON.stringify(body.ra || []);
         const rb = JSON.stringify(body.rb || []);
@@ -378,16 +385,16 @@ export default {
 
         if (db) {
           await db.prepare(`
-            INSERT INTO matches (id, date, title, status, note, ts, ra, rb, ev, fin, ps)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO matches (id, date, title, status, note, format, ts, ra, rb, ev, fin, ps)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
-              date = ?, title = ?, status = ?, note = ?, ts = ?, ra = ?, rb = ?, ev = ?, fin = ?, ps = ?
-          `).bind(id, date, title, status, note, ts, ra, rb, ev, fin, ps,
-                  date, title, status, note, ts, ra, rb, ev, fin, ps).run();
+              date = ?, title = ?, status = ?, note = ?, format = ?, ts = ?, ra = ?, rb = ?, ev = ?, fin = ?, ps = ?
+          `).bind(id, date, title, status, note, format, ts, ra, rb, ev, fin, ps,
+                  date, title, status, note, format, ts, ra, rb, ev, fin, ps).run();
           await bumpVersion(db);
         } else {
           const idx = memoryStore.matches.findIndex((m) => m.id === id);
-          const matchObj = { id, date, title, status, note, ts, ra: JSON.parse(ra), rb: JSON.parse(rb), ev: JSON.parse(ev), fin: JSON.parse(fin), ps: JSON.parse(ps) };
+          const matchObj = { id, date, title, status, note, format, ts, ra: JSON.parse(ra), rb: JSON.parse(rb), ev: JSON.parse(ev), fin: JSON.parse(fin), ps: JSON.parse(ps) };
           if (idx < 0) memoryStore.matches.push(matchObj);
           else memoryStore.matches[idx] = matchObj;
           await bumpVersion();

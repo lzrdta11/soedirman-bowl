@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS matches (
   title TEXT,
   status TEXT DEFAULT 'scheduled',
   note TEXT DEFAULT '',
+  format TEXT DEFAULT 'bo3',
   ts INTEGER NOT NULL,
   ra TEXT DEFAULT '[]',
   rb TEXT DEFAULT '[]',

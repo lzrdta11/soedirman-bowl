@@ -108,7 +108,7 @@ Akses di browser: `http://localhost:8788` atau `http://localhost:8787`.
 | `POST` | `/api/players` | Registers a new player (validates max 14 & cycle schedule) |
 | `DELETE` | `/api/players/:id` | Removes a player from the pool |
 | `POST` | `/api/players/clear` | Clears all players from the pool |
-| `POST` | `/api/event/cycle` | Updates registration cycle timing |
+| `POST` | `/api/event/cycle` | Updates event cycle schedule and format (Best of 3 vs Single Match) |
 | `POST` | `/api/draft/codes` | Updates captain authentication codes |
 | `POST` | `/api/draft/state` | Updates live draft status (picks, captain selection, turn) |
 | `POST` | `/api/matches/:id` | Creates or updates a match (scores, events, stats) |
