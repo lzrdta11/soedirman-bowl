@@ -134,6 +134,27 @@ td,th{border-bottom:1px solid rgba(31,45,110,.08)}
 <!-- STATS -->
 <section class="sec" id="stats">
 <h2 style="margin-top:0">Stats Pemain</h2>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0 18px" id="statsAwards">
+<div class="card" style="margin:0;text-align:center;border-top:4px solid #e0a800;background:linear-gradient(180deg,rgba(224,168,0,.12) 0%,rgba(255,255,255,.7) 60%)">
+<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#a07000;margin-bottom:4px">🏆 Current MVP</div>
+<div id="mvpName" style="font-size:20px;font-weight:800;color:var(--tx);min-height:26px;display:flex;align-items:center;justify-content:center">—</div>
+<div id="mvpStat" class="note" style="margin-top:4px;font-size:12px">Menunggu data pertandingan</div>
+</div>
+
+<div class="card" style="margin:0;text-align:center;border-top:4px solid var(--gen,#0b2a5b);background:linear-gradient(180deg,rgba(11,42,91,.1) 0%,rgba(255,255,255,.7) 60%)">
+<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gen,#0b2a5b);margin-bottom:4px">⚡ Current Best Offense</div>
+<div id="offName" style="font-size:20px;font-weight:800;color:var(--tx);min-height:26px;display:flex;align-items:center;justify-content:center">—</div>
+<div id="offStat" class="note" style="margin-top:4px;font-size:12px">TD, Catch &amp; Complete Pass</div>
+</div>
+
+<div class="card" style="margin:0;text-align:center;border-top:4px solid var(--com,#a50e2a);background:linear-gradient(180deg,rgba(165,14,42,.1) 0%,rgba(255,255,255,.7) 60%)">
+<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--com,#a50e2a);margin-bottom:4px">🛡️ Current Best Defense</div>
+<div id="defName" style="font-size:20px;font-weight:800;color:var(--tx);min-height:26px;display:flex;align-items:center;justify-content:center">—</div>
+<div id="defStat" class="note" style="margin-top:4px;font-size:12px">INT, Battle Won &amp; Flag Pull</div>
+</div>
+</div>
+
 <p class="note">CP = Complete Pass · Catch · TD = Touchdown · Flag Pull · Battle Won · INT = Intercept. Klik judul kolom untuk mengurutkan. Angka adalah akumulasi dari semua match (diinput admin di tab Matches).</p>
 <div class="card wrap"><table id="sT"></table></div>
 </section>
@@ -417,7 +438,53 @@ function rS(){const T=new Map();
  const ent=(id,n)=>{if(!T.has(id))T.set(id,{n:n||id,s:{cp:0,ct:0,td:0,fp:0,bw:0,it:0}});return T.get(id)};
  players.forEach(p=>ent(slug(p.name),p.name));S.forEach(s=>ent(s.id,s.name));
  M.forEach(m=>{Object.entries(m.ps||{}).forEach(([id,p])=>{const o=ent(id,p.n);MK.forEach(f=>{o.s[f]+=p[f]||0})});(m.ev||[]).forEach(e=>{if(e.k==="TD"&&e.n)ent(slug(e.n),e.n).s.td++})});
- const R=[...T.values()];R.sort((a,b)=>srt==="n"?a.n.localeCompare(b.n):(b.s[srt]-a.s[srt])||a.n.localeCompare(b.n));
+ const R=[...T.values()];
+
+ const offScore=s=>(s.td*6)+(s.ct*2)+(s.cp*1);
+ const defScore=s=>(s.it*6)+(s.bw*3)+(s.fp*2);
+ const dec=R.map(r=>({...r,off:offScore(r.s),def:defScore(r.s),mvp:offScore(r.s)+defScore(r.s)}));
+
+ const getLead=(list,scoreKey,tieBreaker)=>{
+  const active=list.filter(x=>x[scoreKey]>0).sort((a,b)=>b[scoreKey]-a[scoreKey]||(tieBreaker?tieBreaker(a,b):0));
+  if(!active.length)return null;
+  const topVal=active[0][scoreKey];
+  const ties=active.filter(x=>x[scoreKey]===topVal);
+  return {ties,top:active[0],val:topVal};
+ };
+
+ const leadMvp=getLead(dec,"mvp",(a,b)=>b.s.td-a.s.td||b.s.it-a.s.it);
+ const leadOff=getLead(dec,"off",(a,b)=>b.s.td-a.s.td||b.s.ct-a.s.ct);
+ const leadDef=getLead(dec,"def",(a,b)=>b.s.it-a.s.it||b.s.bw-a.s.bw||b.s.fp-a.s.fp);
+
+ if($("mvpName")){
+  if(leadMvp){
+   $("mvpName").innerHTML=leadMvp.ties.map(x=>esc(x.n)).join(", ");
+   $("mvpStat").textContent=leadMvp.val+" Pts ("+leadMvp.top.off+" Off · "+leadMvp.top.def+" Def)";
+  }else{
+   $("mvpName").textContent="—";
+   $("mvpStat").textContent="Menunggu data pertandingan";
+  }
+ }
+ if($("offName")){
+  if(leadOff){
+   $("offName").innerHTML=leadOff.ties.map(x=>esc(x.n)).join(", ");
+   $("offStat").textContent=leadOff.val+" Pts ("+leadOff.top.s.td+" TD · "+leadOff.top.s.ct+" Catch · "+leadOff.top.s.cp+" CP)";
+  }else{
+   $("offName").textContent="—";
+   $("offStat").textContent="TD, Catch & Complete Pass";
+  }
+ }
+ if($("defName")){
+  if(leadDef){
+   $("defName").innerHTML=leadDef.ties.map(x=>esc(x.n)).join(", ");
+   $("defStat").textContent=leadDef.val+" Pts ("+leadDef.top.s.it+" INT · "+leadDef.top.s.bw+" BW · "+leadDef.top.s.fp+" FP)";
+  }else{
+   $("defName").textContent="—";
+   $("defStat").textContent="INT, Battle Won & Flag Pull";
+  }
+ }
+
+ R.sort((a,b)=>srt==="n"?a.n.localeCompare(b.n):(b.s[srt]-a.s[srt])||a.n.localeCompare(b.n));
  $("sT").innerHTML='<tr><th data-s="n" style="cursor:pointer">Pemain</th>'+SK.map(x=>'<th data-s="'+x[0]+'" style="cursor:pointer">'+x[1]+(srt===x[0]?" ▼":"")+'</th>').join("")+'</tr>'+
  (R.length?R.map((r,i)=>'<tr'+(i===0&&srt!=="n"&&r.s[srt]>0?' class="top"':'')+'><td>'+esc(r.n)+' <span class="rm adm" data-sd="'+esc(r.n)+'">×</span></td>'+SK.map(x=>'<td class="nc"><b>'+r.s[x[0]]+'</b></td>').join("")+'</tr>').join(""):'<tr><td colspan="7" class="mu">Belum ada pemain terdaftar.</td></tr>')}
 function rP(){if(!admin||!players.length)return;
