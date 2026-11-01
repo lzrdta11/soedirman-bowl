@@ -403,11 +403,48 @@ const mr=(m,t)=>{const x=t==="A"?m.ra:m.rb;return x&&x.length?x:roster(t)};
 const wr=m=>(m.ra&&m.ra.length)||(m.rb&&m.rb.length)?m:{...m,ra:roster("A"),rb:roster("B")};
 const tn=t=>t==="A"?'<span class="g">Generals</span>':t==="B"?'<span class="c">Commandos</span>':'<span class="mu">—</span>';
 function scoreDlg(m){if(decided(m))return;const g=curG(m);
- const opt=t=>'<option value="">— tanpa nama —</option>'+(mr(m,t).length?mr(m,t):players.map(p=>p.name)).map(n=>'<option>'+esc(n)+'</option>').join("");
- dlg('<h2 style="margin-top:0">Input Skor · Game '+g+'</h2><label>Tim<select id="eT"><option value="A">Generals</option><option value="B">Commandos</option></select></label><label>Kejadian<select id="eK">'+Object.keys(ET).map(k=>'<option value="'+k+'">'+ET[k].l+'</option>').join("")+'</select></label><label>Pemain (opsional; TD otomatis masuk stats)<select id="eN">'+opt("A")+'</select></label>',
- async()=>{const t=$("eT").value,k=$("eK").value,n=$("eN").value,w=wr(m);
-  await put("matches",m.id,{...w,status:w.status==="scheduled"?"live":w.status,ev:[...(m.ev||[]),{t,k,p:ET[k].p,n,g}]})});
- $("eT").onchange=()=>{$("eN").innerHTML=opt($("eT").value)}}
+ const opt=t=>'<option value="">— pilih pemain —</option>'+(mr(m,t).length?mr(m,t):players.map(p=>p.name)).map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join("");
+ const upd=()=>{
+  const t=$("eT").value,o=opt(t);
+  if($("eQb"))$("eQb").innerHTML=o;
+  if($("eRec"))$("eRec").innerHTML=o;
+  if($("eRush"))$("eRush").innerHTML=o;
+  if($("eN"))$("eN").innerHTML=o;
+ };
+ const updF=()=>{
+  const isTd=$("eK").value==="TD";
+  if($("wrapTdType"))$("wrapTdType").style.display=isTd?"block":"none";
+  if(isTd){
+   const isPass=$("eSub").value==="pass";
+   if($("wrapTdPass"))$("wrapTdPass").style.display=isPass?"block":"none";
+   if($("wrapTdRush"))$("wrapTdRush").style.display=isPass?"none":"block";
+   if($("wrapOther"))$("wrapOther").style.display="none";
+  }else{
+   if($("wrapTdPass"))$("wrapTdPass").style.display="none";
+   if($("wrapTdRush"))$("wrapTdRush").style.display="none";
+   if($("wrapOther"))$("wrapOther").style.display="block";
+  }
+ };
+ dlg('<h2 style="margin-top:0">Input Skor · Game '+g+'</h2><label>Tim<select id="eT"><option value="A">Generals</option><option value="B">Commandos</option></select></label><label>Kejadian<select id="eK">'+Object.keys(ET).map(k=>'<option value="'+k+'">'+ET[k].l+'</option>').join("")+'</select></label><div id="wrapTdType" style="margin-bottom:10px"><label>Tipe Touchdown<select id="eSub"><option value="pass">Passing TD (Pass QB ➔ Receiver)</option><option value="rush">Rushing TD (Run)</option></select></label><div class="note" style="font-size:12px;margin-top:-4px;margin-bottom:8px">Pada Passing TD, QB dan Receiver masing-masing otomatis mendapat +1 TD di stats.</div></div><div id="wrapTdPass"><label>Quarterback (Passer)<select id="eQb">'+opt("A")+'</select></label><label>Receiver (Catcher / Scorer)<select id="eRec">'+opt("A")+'</select></label></div><div id="wrapTdRush" style="display:none"><label>Pemain Rushing (Scorer)<select id="eRush">'+opt("A")+'</select></label></div><div id="wrapOther" style="display:none"><label>Pemain (opsional)<select id="eN">'+opt("A")+'</select></label></div>',
+ async()=>{const t=$("eT").value,k=$("eK").value,w=wr(m);
+  let evObj;
+  if(k==="TD"){
+   const sub=$("eSub").value;
+   if(sub==="pass"){
+    const qb=$("eQb").value.trim(),rec=$("eRec").value.trim();
+    evObj={t,k,p:ET[k].p,sub:"pass",qb,n:rec,g};
+   }else{
+    const rush=$("eRush").value.trim();
+    evObj={t,k,p:ET[k].p,sub:"rush",n:rush,g};
+   }
+  }else{
+   const n=$("eN").value.trim();
+   evObj={t,k,p:ET[k].p,n,g};
+  }
+  await put("matches",m.id,{...w,status:w.status==="scheduled"?"live":w.status,ev:[...(m.ev||[]),evObj]})});
+ $("eT").onchange=upd;
+ $("eK").onchange=updF;
+ $("eSub").onchange=updF;}
 async function finGame(m){if(decided(m))return;const g=curG(m),a=gs(m,"A",g),b=gs(m,"B",g);
  if(a===b)return alert("Skor Game "+g+" masih seri ("+a+"–"+b+"). Tambahkan skor sampai ada pemenang.");
  const n={...wr(m),fin:[...fin(m),g]};n.status=decided(n)?"final":"live";await put("matches",m.id,n)}
@@ -417,10 +454,10 @@ async function mbump(m,n,f,d){const w=wr(m),id=slug(n),ps={...(w.ps||{})},cur=ps
 function mst(m){const L=[],add=(n,t)=>{if(n&&!L.some(x=>x.n===n))L.push({n,t})},ps=m.ps||{};
  mr(m,"A").forEach(n=>add(n,"A"));mr(m,"B").forEach(n=>add(n,"B"));
  Object.values(ps).forEach(p=>add(p.n,mr(m,"A").includes(p.n)?"A":mr(m,"B").includes(p.n)?"B":""));
- (m.ev||[]).forEach(e=>add(e.n,e.t));
+ (m.ev||[]).forEach(e=>{if(e.qb)add(e.qb,e.t);if(e.n)add(e.n,e.t);});
  const btn=(x,f,d)=>'<button class="mb adm" data-a="ms" data-i="'+m.id+'" data-n="'+esc(x.n)+'" data-f="'+f+'" data-d="'+d+'">'+(d<0?"−":"+")+'</button>';
  const row=x=>{const s=ps[slug(x.n)]||{};return '<tr><td>'+esc(x.n)+'</td><td>'+tn(x.t)+'</td>'+SK.map(k=>{const f=k[0];
-  if(f==="td")return '<td class="nc"><b>'+(m.ev||[]).filter(e=>e.k==="TD"&&e.n===x.n).length+'</b></td>';
+  if(f==="td"){const c=(m.ev||[]).filter(e=>{if(e.k!=="TD")return false;if(e.sub==="pass")return e.qb===x.n||e.n===x.n;return e.n===x.n;}).length;return '<td class="nc"><b>'+c+'</b></td>';}
   return '<td class="nc">'+btn(x,f,-1)+' <b>'+(s[f]||0)+'</b> '+btn(x,f,1)+'</td>'}).join("")+'</tr>'};
  return '<details data-i="s'+m.id+'"'+(openM.has("s"+m.id)?" open":"")+' style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">Stats pemain match ini</summary><div class="wrap"><table><tr><th>Pemain</th><th>Tim</th>'+SK.map(k=>'<th>'+k[1]+'</th>').join("")+'</tr>'+(L.length?L.map(row).join(""):'<tr><td colspan="8" class="mu">Belum ada pemain. Susunan tim terisi otomatis setelah draft selesai.</td></tr>')+'</table></div><div class="note">TD dihitung otomatis dari input skor. Semua angka otomatis terakumulasi di tab Stats.</div></details>'}
 const lg=t=>{const e=document.querySelector('img[alt="Logo '+(t==="A"?"Generals":"Commandos")+'"]');return e?e.src:""};
@@ -428,7 +465,21 @@ function rM(){const L=[...M].sort((a,b)=>(b.date||"").localeCompare(a.date||"")|
  $("mList").innerHTML=L.length?L.map(m=>{const bo3=isBo3(m);const dc=decided(m),cg=curG(m),A=gw(m,"A"),B=gw(m,"B"),f=fin(m);
   const maxGames=bo3?[1,2,3]:[1];
   const gr=maxGames.filter(g=>g<=f.length||(!dc&&g===cg)).map(g=>'<tr><td>Game '+g+'</td><td class="nc"><b>'+gs(m,"A",g)+' – '+gs(m,"B",g)+'</b></td><td>'+(f.includes(g)?"Selesai":(m.status==="scheduled"&&!(m.ev||[]).length)?"Belum mulai":"Berjalan")+'</td></tr>').join("");
-  const ev=(m.ev||[]).map(e=>'<li>'+(bo3?'G'+gOf(e)+' · ':'')+tn(e.t)+' · '+ET[e.k].l.split(" (")[0]+' +'+e.p+(e.n?' · '+esc(e.n):"")+'</li>').join("");
+  const ev=(m.ev||[]).map(e=>{
+   let who="";
+   if(e.k==="TD"){
+    if(e.sub==="pass"){
+     who=' · <span class="pill" style="font-size:11px;padding:1px 6px">Pass</span> '+(e.qb?'<b>'+esc(e.qb)+'</b> (QB) → ':'')+(e.n?'<b>'+esc(e.n)+'</b> (REC)':(e.qb?'':'—'));
+    }else if(e.sub==="rush"){
+     who=' · <span class="pill" style="font-size:11px;padding:1px 6px">Rush</span> '+(e.n?'<b>'+esc(e.n)+'</b>':'—');
+    }else if(e.n){
+     who=' · <b>'+esc(e.n)+'</b>';
+    }
+   }else if(e.n){
+    who=' · '+esc(e.n);
+   }
+   return '<li>'+(bo3?'G'+gOf(e)+' · ':'')+tn(e.t)+' · '+ET[e.k].l.split(" (")[0]+' +'+e.p+who+'</li>';
+  }).join("");
   const scoreText=bo3?(A+' – '+B):(gs(m,"A",1)+' – '+gs(m,"B",1));
   const winnerName=bo3?(A>B?"Generals":"Commandos"):(gs(m,"A",1)>gs(m,"B",1)?"Generals":"Commandos");
   return '<div class="card"><div class="mu">'+esc(m.date||"TBA")+' · <span class="pill">'+ST[m.status||"scheduled"]+'</span> · '+(bo3?'Best of 3':'Single Match')+'</div><h3>'+esc(m.title||"Match")+'</h3><div class="sb"><div class="st"><img src="'+lg("A")+'" alt="Generals"><div class="tnm g">Generals</div></div><div class="sc">'+scoreText+'</div><div class="st"><img src="'+lg("B")+'" alt="Commandos"><div class="tnm c">Commandos</div></div></div>'+(dc?'<div class="note" style="text-align:center">Pemenang match: '+winnerName+'</div>':"")+
@@ -437,7 +488,16 @@ function rM(){const L=[...M].sort((a,b)=>(b.date||"").localeCompare(a.date||"")|
 function rS(){const T=new Map();
  const ent=(id,n)=>{if(!T.has(id))T.set(id,{n:n||id,s:{cp:0,ct:0,td:0,fp:0,bw:0,it:0}});return T.get(id)};
  players.forEach(p=>ent(slug(p.name),p.name));S.forEach(s=>ent(s.id,s.name));
- M.forEach(m=>{Object.entries(m.ps||{}).forEach(([id,p])=>{const o=ent(id,p.n);MK.forEach(f=>{o.s[f]+=p[f]||0})});(m.ev||[]).forEach(e=>{if(e.k==="TD"&&e.n)ent(slug(e.n),e.n).s.td++})});
+ M.forEach(m=>{Object.entries(m.ps||{}).forEach(([id,p])=>{const o=ent(id,p.n);MK.forEach(f=>{o.s[f]+=p[f]||0})});(m.ev||[]).forEach(e=>{
+   if(e.k==="TD"){
+    if(e.sub==="pass"){
+     if(e.qb)ent(slug(e.qb),e.qb).s.td++;
+     if(e.n)ent(slug(e.n),e.n).s.td++;
+    }else{
+     if(e.n)ent(slug(e.n),e.n).s.td++;
+    }
+   }
+  })});
  const R=[...T.values()];
 
  const offScore=s=>(s.td*6)+(s.ct*2)+(s.cp*1);
