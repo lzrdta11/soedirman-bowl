@@ -397,7 +397,21 @@ const gw=(m,t)=>fin(m).filter(g=>t==="A"?gs(m,"A",g)>gs(m,"B",g):gs(m,"B",g)>gs(
 const isBo3=m=>(m&&m.format?m.format!=="single":(cyc&&cyc.format?cyc.format!=="single":true));
 const maxG=m=>isBo3(m)?3:1;
 const targetW=m=>isBo3(m)?2:1;
-const decided=m=>gw(m,"A")>=targetW(m)||gw(m,"B")>=targetW(m);
+const decided=m=>m.status==="final"||gw(m,"A")>=targetW(m)||gw(m,"B")>=targetW(m)||fin(m).length>=maxG(m);
+function matchResult(m){
+ const bo3=isBo3(m);
+ if(bo3){
+  const A=gw(m,"A"),B=gw(m,"B");
+  if(A>B)return{text:"Pemenang match: Generals ("+A+"–"+B+")",winner:"A",tie:false};
+  if(B>A)return{text:"Pemenang match: Commandos ("+B+"–"+A+")",winner:"B",tie:false};
+  return{text:"Hasil match: Seri / Draw ("+A+"–"+B+")",winner:null,tie:true};
+ }else{
+  const a=gs(m,"A",1),b=gs(m,"B",1);
+  if(a>b)return{text:"Pemenang match: Generals ("+a+"–"+b+")",winner:"A",tie:false};
+  if(b>a)return{text:"Pemenang match: Commandos ("+b+"–"+a+")",winner:"B",tie:false};
+  return{text:"Hasil match: Seri / Draw ("+a+"–"+b+")",winner:null,tie:true};
+ }
+}
 const curG=m=>Math.min(maxG(m),fin(m).length+1);
 const mr=(m,t)=>{const x=t==="A"?m.ra:m.rb;return x&&x.length?x:roster(t)};
 const wr=m=>(m.ra&&m.ra.length)||(m.rb&&m.rb.length)?m:{...m,ra:roster("A"),rb:roster("B")};
@@ -446,7 +460,7 @@ function scoreDlg(m){if(decided(m))return;const g=curG(m);
  $("eK").onchange=updF;
  $("eSub").onchange=updF;}
 async function finGame(m){if(decided(m))return;const g=curG(m),a=gs(m,"A",g),b=gs(m,"B",g);
- if(a===b)return alert("Skor Game "+g+" masih seri ("+a+"–"+b+"). Tambahkan skor sampai ada pemenang.");
+ if(a===b&&!confirm("Skor Game "+g+" seri ("+a+"–"+b+"). Selesaikan game ini dengan hasil seri?"))return;
  const n={...wr(m),fin:[...fin(m),g]};n.status=decided(n)?"final":"live";await put("matches",m.id,n)}
 async function reopen(m){const f=[...fin(m)];if(!f.length)return;f.pop();await put("matches",m.id,{...m,fin:f,status:"live"})}
 async function mbump(m,n,f,d){const w=wr(m),id=slug(n),ps={...(w.ps||{})},cur=ps[id]||{n,cp:0,ct:0,fp:0,bw:0,it:0};
@@ -464,7 +478,7 @@ const lg=t=>{const e=document.querySelector('img[alt="Logo '+(t==="A"?"Generals"
 function rM(){const L=[...M].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.ts||0)-(a.ts||0));
  $("mList").innerHTML=L.length?L.map(m=>{const bo3=isBo3(m);const dc=decided(m),cg=curG(m),A=gw(m,"A"),B=gw(m,"B"),f=fin(m);
   const maxGames=bo3?[1,2,3]:[1];
-  const gr=maxGames.filter(g=>g<=f.length||(!dc&&g===cg)).map(g=>'<tr><td>Game '+g+'</td><td class="nc"><b>'+gs(m,"A",g)+' – '+gs(m,"B",g)+'</b></td><td>'+(f.includes(g)?"Selesai":(m.status==="scheduled"&&!(m.ev||[]).length)?"Belum mulai":"Berjalan")+'</td></tr>').join("");
+  const gr=maxGames.filter(g=>g<=f.length||(!dc&&g===cg)).map(g=>{const sa=gs(m,"A",g),sb=gs(m,"B",g);const isF=f.includes(g);const st=isF?(sa===sb?"Selesai (Seri)":"Selesai"):((m.status==="scheduled"&&!(m.ev||[]).length)?"Belum mulai":"Berjalan");return '<tr><td>Game '+g+'</td><td class="nc"><b>'+sa+' – '+sb+'</b></td><td>'+st+'</td></tr>'}).join("");
   const ev=(m.ev||[]).map(e=>{
    let who="";
    if(e.k==="TD"){
@@ -481,8 +495,8 @@ function rM(){const L=[...M].sort((a,b)=>(b.date||"").localeCompare(a.date||"")|
    return '<li>'+(bo3?'G'+gOf(e)+' · ':'')+tn(e.t)+' · '+ET[e.k].l.split(" (")[0]+' +'+e.p+who+'</li>';
   }).join("");
   const scoreText=bo3?(A+' – '+B):(gs(m,"A",1)+' – '+gs(m,"B",1));
-  const winnerName=bo3?(A>B?"Generals":"Commandos"):(gs(m,"A",1)>gs(m,"B",1)?"Generals":"Commandos");
-  return '<div class="card"><div class="mu">'+esc(m.date||"TBA")+' · <span class="pill">'+ST[m.status||"scheduled"]+'</span> · '+(bo3?'Best of 3':'Single Match')+'</div><h3>'+esc(m.title||"Match")+'</h3><div class="sb"><div class="st"><img src="'+lg("A")+'" alt="Generals"><div class="tnm g">Generals</div></div><div class="sc">'+scoreText+'</div><div class="st"><img src="'+lg("B")+'" alt="Commandos"><div class="tnm c">Commandos</div></div></div>'+(dc?'<div class="note" style="text-align:center">Pemenang match: '+winnerName+'</div>':"")+
+  const res=matchResult(m);
+  return '<div class="card"><div class="mu">'+esc(m.date||"TBA")+' · <span class="pill">'+ST[m.status||"scheduled"]+'</span> · '+(bo3?'Best of 3':'Single Match')+'</div><h3>'+esc(m.title||"Match")+'</h3><div class="sb"><div class="st"><img src="'+lg("A")+'" alt="Generals"><div class="tnm g">Generals</div></div><div class="sc">'+scoreText+'</div><div class="st"><img src="'+lg("B")+'" alt="Commandos"><div class="tnm c">Commandos</div></div></div>'+(dc?'<div class="note" style="text-align:center;font-weight:700;font-size:15px;margin-top:6px;color:'+(res.tie?'var(--tx)':res.winner==='A'?'var(--gen)':'var(--com)')+'">'+res.text+'</div>':"")+
   '<div class="wrap"><table>'+gr+'</table></div>'+(ev?'<details data-i="e'+m.id+'"'+(openM.has("e"+m.id)?" open":"")+' style="margin-top:8px"><summary style="cursor:pointer;font-weight:600">Riwayat skor</summary><ul>'+ev+'</ul></details>':"")+(m.note?'<p class="note">'+esc(m.note)+'</p>':"")+mst(m)+
   '<div class="ms adm">'+(dc?"":'<button class="btn s" data-a="sc" data-i="'+m.id+'">+ Skor Game '+cg+'</button><button class="btn s o" data-a="un" data-i="'+m.id+'">Undo skor</button><button class="btn s o" data-a="fin" data-i="'+m.id+'">Selesaikan Game '+cg+'</button>')+(f.length?'<button class="btn s o" data-a="reo" data-i="'+m.id+'">Buka ulang Game '+f[f.length-1]+'</button>':"")+'<button class="btn s o" data-a="ed" data-i="'+m.id+'">Edit</button><button class="btn s o" data-a="del" data-i="'+m.id+'">Hapus</button></div></div>'}).join(""):'<div class="card mu">Belum ada match.</div>'}
 function rS(){const T=new Map();
